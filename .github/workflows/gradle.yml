@@ -30,7 +30,11 @@ jobs:
         distribution: 'temurin'
     - name: Gradlew executable
       run: chmod +x ./gradlew
-    - name: Build with Gradle
-      uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
+    - name: Making the jar
+      run: ./gradlew jar
+
+    - name: Unloading it
+      uses: actions/upload-artifact@v2
       with:
-        arguments: build
+          name: ${{ github.event.repository.name }}
+          path: build/libs/
