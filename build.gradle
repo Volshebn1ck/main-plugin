@@ -9,11 +9,16 @@ repositories {
     mavenCentral()
     maven { url 'https://jitpack.io/' }
 }
+bootJar {
+    enabled = false
+}
 
+jar {
+    enabled = true
+}
 ext {
     mindustryVersion = 'v145'
 }
-tasks { bootJar.get().archiveClassifier.set("boot") jar.get().enabled = true }
 tasks.withType(JavaCompile) {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
