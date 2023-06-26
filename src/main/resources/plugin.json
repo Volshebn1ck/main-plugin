@@ -1,0 +1,9 @@
+{
+  "name": "ServerPlugin",
+  "minGameVersion": "145",
+  "displayName": "Main server plugin",
+  "author": "NazrinNya",
+  "description": "Yeah no",
+  "version": "1.0",
+  "main": "plugin.Ploogin"
+}

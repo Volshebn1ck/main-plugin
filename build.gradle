@@ -1,0 +1,49 @@
+plugins {
+    id 'java-library'
+    id 'java'
+    id 'org.springframework.boot' version '3.0.1'
+    id 'io.spring.dependency-management' version '1.1.0'
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io/' }
+}
+
+ext {
+    mindustryVersion = 'v145'
+}
+
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+    options.encoding = 'UTF-8'
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://www.jitpack.io/' }
+}
+
+dependencies {
+    compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
+    compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
+    compileOnly "com.github.Anuken.Mindustry:server:$mindustryVersion"
+    implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
+    implementation "org.javacord:javacord:3.8.0"
+    //implementation 'org.mariadb.jdbc:mariadb-java-client:3.1.2'
+    //implementation 'com.theokanning.openai-gpt3-java:service:0.11.1'
+    //implementation 'org.springframework.boot:spring-boot-starter-web'
+    //implementation "org.xerial:sqlite-jdbc:3.39.4.1"
+    //implementation "com.j256.ormlite:ormlite-jdbc:6.1"
+}
+
+jar {
+    version = null
+    exclude 'META-INF/.RSA', 'META-INF/.SF','META-INF/*.DSA'
+    duplicatesStrategy=DuplicatesStrategy.EXCLUDE
+
+    archiveFileName = "ServerPlugin.jar"
+    from configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+}
