@@ -1,4 +1,5 @@
 .gradle
 /build/
-
-!gradlewrapper.jar
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
