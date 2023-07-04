@@ -68,6 +68,13 @@ public class Ploogin extends Plugin implements ApplicationListener{
             }
         });
         handler.<Player>register("ban", "<player> <reason...>",  "Bans the players", (args,player) -> {
+            String id = args[0];
+            reason = args[1];
+            victim = Utilities.findPlayerByName(id);
+            if (victim == null){
+                player.sendMessage("This player doesnt exist!");
+                return;
+            }
             if (victim.admin()){
                 player.sendMessage("[red]You cant ban an admin!");
                 return;
@@ -76,14 +83,7 @@ public class Ploogin extends Plugin implements ApplicationListener{
                 player.sendMessage("You cant ban yourself!");
                 return;
             }
-            if (victim == null){
-                player.sendMessage("This player doesnt exist!");
-                return;
-            }
             if (player.admin()){
-                String id = args[0];
-                reason = args[1];
-                victim = Utilities.findPlayerByName(id);
                 Call.menu(player.con, plugin.utils.MenuHandler.banMenu, "Ban", "Are you sure you want to ban " + victim.plainName() + "?", new String[][]{{"Confirm ", "Cancel"}});
             } else {
                 player.sendMessage("[red]Not enough permissions!");
