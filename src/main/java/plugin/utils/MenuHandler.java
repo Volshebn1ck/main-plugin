@@ -9,7 +9,7 @@ import plugin.discord.Bot;
 
 
 public class MenuHandler {
-        Player plr = Ploogin.victim;
+        public static Player plr = Ploogin.victim;
         public static int banMenu = Menus.registerMenu((player, option) -> {
             switch (option) {
                 case -1 -> {
