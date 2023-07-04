@@ -64,11 +64,7 @@ public class Ploogin extends Plugin implements ApplicationListener{
                 player.sendMessage("[scarlet]You must be admin to use this command.");
             }
         });
-        handler.<Player>register("timestop", "za warudo", (args, player) -> {
-
-        });
     }
-    // logs /js errors so this shit won't crash
     // i dont know why it even exists
     @Override
     public void dispose(){
