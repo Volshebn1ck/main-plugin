@@ -1,5 +1,6 @@
 {
     "token": "bot token",
     "logchannelid": "channel where messages will be logged",
-    "banlogchannelid": "channel where bans will be logged"
+    "banlogchannelid": "channel where bans will be logged",
+    "mongodburl": "Mongo Database URL connection"
 }

@@ -2,26 +2,36 @@ package plugin;
 
 import arc.*;
 import arc.util.*;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
 import mindustry.Vars;
 import mindustry.game.*;
 import mindustry.gen.*;
 import mindustry.mod.Plugin;
 import mindustry.gen.Player;
+import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.javacord.api.*;
 import org.javacord.api.entity.intent.Intent;
 import org.json.simple.parser.ParseException;
 import plugin.discord.Bot;
 import plugin.ConfigJson;
 import plugin.utils.Utilities;
+import plugin.DataHandler.*;
 
 import java.io.IOException;
+import java.util.Map;
 
-import static mindustry.Vars.mods;
-import static mindustry.Vars.player;
+import static com.mongodb.client.model.Filters.eq;
+import static mindustry.Vars.*;
+import static plugin.DataHandler.mongoClient;
+import static plugin.DataHandler.mongodb;
 
 
 public class Ploogin extends Plugin implements ApplicationListener{
-
+    MongoDatabase db = mongoClient.getDatabase("mindustry");
+    MongoCollection<Document> playerCollection = db.getCollection("players");
     public static Player victim;
     public static String reason;
     public static Player moderator;
@@ -30,10 +40,26 @@ public class Ploogin extends Plugin implements ApplicationListener{
     public Ploogin() throws IOException, ParseException {
         ConfigJson.read();
         Bot.load();
+        mongodb();
+    }
+    public void MongoDbPlayerCreation(Player eventPlayer){
+        var id = new ObjectId();
+        Document plrDoc = new Document("_id", id);
+        plrDoc.append("uuid", eventPlayer.uuid());
+        plrDoc.append("lastBan", "0");
+        Document chk = playerCollection.find(Filters.eq(eventPlayer.uuid())).first();
+        if (chk == null){
+            playerCollection.insertOne(plrDoc);
+        } else {
+            return;
+        }
     }
     //  starts once plugin is started
     public void init() {
         Log.info("Plugin started!");
+        Events.on(EventType.PlayerJoin.class, event ->
+                MongoDbPlayerCreation(event.player)
+        );
     }
     // registers commands for client such as /ping
     @Override

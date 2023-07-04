@@ -15,6 +15,7 @@ public class ConfigJson {
     public static String token;
     public static String banlogchannelid;
     public static String logchannelid;
+    public static String mongodburl;
     // reads variables from config.json
     public static void read() throws IOException, ParseException {
         try {
@@ -23,6 +24,7 @@ public class ConfigJson {
             token = (String) object.get("token");
             logchannelid = (String) object.get("logchannelid");
             banlogchannelid = (String) object.get("banlogchannelid");
+            mongodburl = (String) object.get("mongodburl");
         }catch(Exception e){
             Log.err("Skill issue: " + e);
         }
