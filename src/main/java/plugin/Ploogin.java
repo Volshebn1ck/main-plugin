@@ -23,6 +23,7 @@ import plugin.utils.Utilities;
 
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Map;
 
 import static com.mongodb.client.model.Filters.eq;
@@ -31,12 +32,13 @@ import static mindustry.Vars.*;
 
 
 public class Ploogin extends Plugin implements ApplicationListener{
-    MongoClient mongoClient;
-    MongoDatabase db;
-    MongoCollection<Document> playerCollection;
+    public static MongoClient mongoClient;
+    public static MongoDatabase db;
+    public static MongoCollection<Document> playerCollection;
     public static Player victim;
     public static String reason;
     public static Player moderator;
+    public static long time;
 
     // loads bot and other shit
     public Ploogin() throws IOException, ParseException {
@@ -65,6 +67,15 @@ public class Ploogin extends Plugin implements ApplicationListener{
         Events.on(EventType.PlayerJoin.class, event ->
                 MongoDbPlayerCreation(event.player)
         );
+        Events.on(EventType.PlayerConnect.class, event -> {
+            Document user = playerCollection.find(Filters.eq("uuid", event.player.uuid())).first();
+            long lastBan = user.getLong("lastBan");
+            Date date = new Date();
+            if (lastBan > date.getTime()) {
+                long timeUntilUnban = (lastBan - date.getTime())/1000;
+                event.player.con.kick("You have been banned! Wait " + timeUntilUnban + " more seconds for unban!", 0);
+            }
+        });
     }
     // registers commands for client such as /ping
     @Override
@@ -99,11 +110,12 @@ public class Ploogin extends Plugin implements ApplicationListener{
                 player.sendMessage("[scarlet]You must be admin to use this command.");
             }
         });
-        handler.<Player>register("ban", "<player> <reason...>",  "Bans the players", (args,player) -> {
+        handler.<Player>register("ban", "<player> <seconds> <reason...>",  "Bans the players", (args,player) -> {
             String id = args[0];
-            reason = args[1];
+            reason = args[2];
             victim = Utilities.findPlayerByName(id);
             moderator = player;
+            time = Long.parseLong(args[1]);
             if (victim == null){
                 player.sendMessage("[red]This player doesnt exist!");
                 return;
