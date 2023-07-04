@@ -67,7 +67,7 @@ public class Ploogin extends Plugin implements ApplicationListener{
                 player.sendMessage("[scarlet]You must be admin to use this command.");
             }
         });
-        handler.<Player>register("ban", "<player...>, <reason...>", "Bans the players", (args,player) -> {
+        handler.<Player>register("ban", "<player...> <reason...>",  "Bans the players", (args,player) -> {
             if (victim.admin()){
                 player.sendMessage("[red]You cant ban an admin!");
                 return;
