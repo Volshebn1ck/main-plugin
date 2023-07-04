@@ -2,6 +2,8 @@ package plugin;
 
 import arc.*;
 import arc.util.*;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
@@ -18,20 +20,20 @@ import org.json.simple.parser.ParseException;
 import plugin.discord.Bot;
 import plugin.ConfigJson;
 import plugin.utils.Utilities;
-import plugin.DataHandler.*;
+
 
 import java.io.IOException;
 import java.util.Map;
 
 import static com.mongodb.client.model.Filters.eq;
 import static mindustry.Vars.*;
-import static plugin.DataHandler.mongoClient;
-import static plugin.DataHandler.mongodb;
+
 
 
 public class Ploogin extends Plugin implements ApplicationListener{
-    MongoDatabase db = mongoClient.getDatabase("mindustry");
-    MongoCollection<Document> playerCollection = db.getCollection("players");
+    MongoClient mongoClient;
+    MongoDatabase db;
+    MongoCollection<Document> playerCollection;
     public static Player victim;
     public static String reason;
     public static Player moderator;
@@ -40,7 +42,9 @@ public class Ploogin extends Plugin implements ApplicationListener{
     public Ploogin() throws IOException, ParseException {
         ConfigJson.read();
         Bot.load();
-        mongodb();
+        mongoClient = MongoClients.create(ConfigJson.mongodburl);
+        db = mongoClient.getDatabase("mindustry");
+        playerCollection = db.getCollection("players");
     }
     public void MongoDbPlayerCreation(Player eventPlayer){
         var id = new ObjectId();

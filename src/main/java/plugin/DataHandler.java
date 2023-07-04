@@ -1,3 +1,4 @@
+/*
 package plugin;
 
 import com.mongodb.client.MongoClient;
@@ -10,9 +11,6 @@ public class DataHandler {
     public static MongoClient mongoClient;
     public static void mongodb() {
         mongoClient = MongoClients.create(ConfigJson.mongodburl);
-        MongoDatabase db = mongoClient.getDatabase("mindustry");
-        MongoCollection<Document> playerCollection = db.getCollection("players");
     }
-    
-    
 }
+*/
