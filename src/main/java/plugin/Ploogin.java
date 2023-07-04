@@ -49,9 +49,10 @@ public class Ploogin extends Plugin implements ApplicationListener{
     public void MongoDbPlayerCreation(Player eventPlayer){
         var id = new ObjectId();
         Document plrDoc = new Document("_id", id);
+        plrDoc.append("id", playerCollection.countDocuments());
         plrDoc.append("uuid", eventPlayer.uuid());
         plrDoc.append("lastBan", "0");
-        Document chk = playerCollection.find(Filters.eq(eventPlayer.uuid())).first();
+        Document chk = playerCollection.find(Filters.eq("uuid", eventPlayer.uuid())).first();
         if (chk == null){
             playerCollection.insertOne(plrDoc);
         } else {
@@ -70,20 +71,20 @@ public class Ploogin extends Plugin implements ApplicationListener{
     public void registerClientCommands(CommandHandler handler){
         handler.<Player>register("announce", "<text...>", "calls an announce", (args, player)->{
             if (!player.admin) {
-                player.sendMessage("You do not have enough permissions!");
+                player.sendMessage("[red]You do not have enough permissions!");
             } else {
                 Call.announce(args[0]);
             }
         });
         handler.<Player>register("gameover", "Executes a gameover event", (args, player) -> {
             if (!player.admin) {
-                player.sendMessage("You do not have enough permissions!");
+                player.sendMessage("[red]You do not have enough permissions!");
             } else {
                  Events.fire(new EventType.GameOverEvent(Team.derelict));
             }
         });
         handler.<Player>register("list", "Lists all players on the server", (args, player) -> {
-            Groups.player.each(player1 -> player.sendMessage("Name: " + player1.name + "; id: " + player1.id()));
+            Groups.player.each(player1 -> player.sendMessage("Name: " + player1.name + "; [white]id: " + player1.id()));
         });
         handler.<Player>register("js", "<code...>", "Execute JavaScript code.", (args, player) -> {
             if (player.admin()) {
@@ -104,7 +105,7 @@ public class Ploogin extends Plugin implements ApplicationListener{
             victim = Utilities.findPlayerByName(id);
             moderator = player;
             if (victim == null){
-                player.sendMessage("This player doesnt exist!");
+                player.sendMessage("[red]This player doesnt exist!");
                 return;
             }
             if (victim.admin()){
@@ -112,7 +113,7 @@ public class Ploogin extends Plugin implements ApplicationListener{
                 return;
             }
             if (victim == player){
-                player.sendMessage("You cant ban yourself!");
+                player.sendMessage("[red]You cant ban yourself!");
                 return;
             }
             if (player.admin()){
