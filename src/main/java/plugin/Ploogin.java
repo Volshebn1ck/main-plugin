@@ -21,12 +21,15 @@ import static mindustry.Vars.player;
 
 
 public class Ploogin extends Plugin implements ApplicationListener{
+
+    public static Player victim;
+    public static String reason;
+
     // loads bot and other shit
     public Ploogin() throws IOException, ParseException {
         ConfigJson.read();
         Bot.load();
     }
-    int i = 60;
     //  starts once plugin is started
     public void init() {
         Log.info("Plugin started!");
@@ -52,7 +55,7 @@ public class Ploogin extends Plugin implements ApplicationListener{
             Groups.player.each(player1 -> player.sendMessage("Name: " + player1.name + "; id: " + player1.id()));
         });
         handler.<Player>register("js", "<code...>", "Execute JavaScript code.", (args, player) -> {
-            if (player.admin) {
+            if (player.admin()) {
                 try {
                     String output = mods.getScripts().runConsole(args[0]);
                     player.sendMessage("> " + ("[#ff341c]" + output));
@@ -62,6 +65,23 @@ public class Ploogin extends Plugin implements ApplicationListener{
                 }
             } else {
                 player.sendMessage("[scarlet]You must be admin to use this command.");
+            }
+        });
+        handler.<Player>register("ban", "<player...>, <reason...>", "Bans the players", (args,player) -> {
+            if (victim.admin()){
+                player.sendMessage("[red]You cant ban an admin!");
+                return;
+            }
+            if (victim == player){
+                player.sendMessage("You cant ban yourself!");
+                return;
+            }
+            if (player.admin()){
+                int id = Integer.parseInt(args[0]);
+                victim = Groups.player.getByID(id);
+                Call.menu(player.con, plugin.utils.MenuHandler.banMenu, "Ban", "Are you sure you want to ban " + victim.plainName() + "?", new String[][]{{"Confirm ", "Cancel"}});
+            } else {
+                player.sendMessage("[red]Not enough permissions!");
             }
         });
     }
