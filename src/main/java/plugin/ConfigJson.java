@@ -13,6 +13,7 @@ import java.io.IOException;
 public class ConfigJson {
     // literally variables for other shit
     public static String token;
+    public static String banlogchannelid;
     public static String logchannelid;
     // reads variables from config.json
     public static void read() throws IOException, ParseException {
@@ -21,6 +22,7 @@ public class ConfigJson {
                     FileReader(Vars.dataDirectory.absolutePath() + "/config.json"));
             token = (String) object.get("token");
             logchannelid = (String) object.get("logchannelid");
+            banlogchannelid = (String) object.get("banlogchannelid");
         }catch(Exception e){
             Log.err("Skill issue: " + e);
         }

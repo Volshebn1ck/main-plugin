@@ -24,6 +24,7 @@ public class Ploogin extends Plugin implements ApplicationListener{
 
     public static Player victim;
     public static String reason;
+    public static Player moderator;
 
     // loads bot and other shit
     public Ploogin() throws IOException, ParseException {
@@ -71,6 +72,7 @@ public class Ploogin extends Plugin implements ApplicationListener{
             String id = args[0];
             reason = args[1];
             victim = Utilities.findPlayerByName(id);
+            moderator = player;
             if (victim == null){
                 player.sendMessage("This player doesnt exist!");
                 return;

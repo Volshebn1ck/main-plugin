@@ -36,6 +36,7 @@ public class Bot {
     // variables for load function
     public static DiscordApi api;
     public static TextChannel channel;
+    public static TextChannel banchannel;
     // main bot
     public static void load(){
         api =  new DiscordApiBuilder()
@@ -46,6 +47,7 @@ public class Bot {
         api.addMessageCreateListener(Bot::onMessageCreate);
         api.addSlashCommandCreateListener(Bot::addSlashCommandListener);
         channel = api.getChannelById(ConfigJson.logchannelid).get().asTextChannel().get();
+        banchannel = api.getChannelById(ConfigJson.banlogchannelid).get().asTextChannel().get();
         registerSlashCommands();
         init();
     }
