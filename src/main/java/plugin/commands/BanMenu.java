@@ -21,6 +21,7 @@ import useful.State.StateKey;
 
 import java.time.Duration;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import static mindustry.Vars.*;
 
@@ -112,7 +113,7 @@ public class BanMenu {
                 long duration = view.state.get(DURATION);
                 Document usr = Ploogin.playerCollection.find(Filters.eq("uuid", target.uuid())).first();
                 Date date = new Date();
-                long banTime = date.getTime() + duration*86400000;
+                long banTime = date.getTime() + TimeUnit.DAYS.toMillis(duration);
                 String timeUntilUnban = Bundle.formatDuration(Duration.ofDays(duration));
                 target.con.kick("You have been banned for: " + text + ". Wait " + timeUntilUnban + " until unban!", 0);
                 Call.sendMessage(target.plainName() + " has been banned for: " + text);

@@ -28,6 +28,7 @@ import static mindustry.Vars.mods;
 import static plugin.commands.BanMenu.loadBanMenu;
 import static plugin.functions.MongoDB.MongoDbPlayerCreation;
 import static plugin.functions.MongoDB.MongoDbPlayerRankCheck;
+import static plugin.functions.Other.welcomeMenu;
 
 
 public class Ploogin extends Plugin implements ApplicationListener{
@@ -56,6 +57,7 @@ public class Ploogin extends Plugin implements ApplicationListener{
         Bundle.load(Ploogin.class);
         Events.on(EventType.PlayerJoin.class, event -> {
             Player plr = event.player;
+            welcomeMenu(plr);
             MongoDbPlayerCreation(plr);
             MongoDbPlayerRankCheck(plr.uuid());
         });

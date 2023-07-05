@@ -3,6 +3,7 @@ package plugin.discord;
 import arc.Core;
 import arc.Events;
 import arc.util.Log;
+import arc.util.Strings;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
@@ -34,9 +35,11 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import mindustry.gen.Player;
 import plugin.ConfigJson;
+import useful.Action;
 import useful.Bundle;
 
 import static mindustry.Vars.*;
@@ -141,9 +144,9 @@ public class Bot {
 
                 int id = Math.toIntExact(listener.getSlashCommandInteraction().getOptionByName("id").get().getLongValue().get());
                 String reason = listener.getSlashCommandInteraction().getOptionByName("reason").get().getStringValue().get();
-                Long time = listener.getSlashCommandInteraction().getOptionByName("time").get().getLongValue().get();
+                long time = listener.getSlashCommandInteraction().getOptionByName("time").get().getLongValue().get();
                 Date date = new Date();
-                long banTime = date.getTime() + time*86400000;
+                long banTime = date.getTime() + TimeUnit.DAYS.toMillis(time);
                 String timeUntilUnban = Bundle.formatDuration(Duration.ofDays(time));
                 Document user = playerCollection.find(Filters.eq("id", id)).first();
                 if (user == null) {
