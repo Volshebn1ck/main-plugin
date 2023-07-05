@@ -20,10 +20,12 @@ import org.json.simple.parser.ParseException;
 import plugin.discord.Bot;
 import plugin.ConfigJson;
 import plugin.utils.Utilities;
+import useful.Bundle;
 
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 
 import static com.mongodb.client.model.Filters.eq;
@@ -64,6 +66,7 @@ public class Ploogin extends Plugin implements ApplicationListener{
     //  starts once plugin is started
     public void init() {
         Log.info("Plugin started!");
+        Bundle.defaultLocale = new Locale("en");
         Events.on(EventType.PlayerJoin.class, event ->
                 MongoDbPlayerCreation(event.player)
         );
@@ -72,8 +75,8 @@ public class Ploogin extends Plugin implements ApplicationListener{
             long lastBan = user.getLong("lastBan");
             Date date = new Date();
             if (lastBan > date.getTime()) {
-                long timeUntilUnban = (lastBan - date.getTime())/1000;
-                event.player.con.kick("You have been banned! Wait " + timeUntilUnban + " more seconds for unban!", 0);
+                String timeUntilUnban = Bundle.formatDate(lastBan - date.getTime());
+                event.player.con.kick("You have been banned! Wait " + timeUntilUnban + " more for unban!", 0);
             }
         });
     }

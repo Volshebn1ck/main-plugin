@@ -13,6 +13,7 @@ import org.bson.conversions.Bson;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import plugin.Ploogin;
 import plugin.discord.Bot;
+import useful.Bundle;
 
 import java.util.Date;
 
@@ -26,13 +27,12 @@ public class MenuHandler {
                     return;
                 }
                 case 0 -> {
-                    Date date = new Date();
-                    long banTime = date.getTime() + Ploogin.time*1000;
-                    /*Vars.netServer.admins.banPlayerIP(plr.ip());
-                    Vars.netServer.admins.banPlayer(plr.uuid());*/
-                    plr.con.kick("You have been banned for: " + Ploogin.reason);
-                    Call.sendMessage(plr.plainName() + " has been banned for: " + Ploogin.reason);
                     Document usr = Ploogin.playerCollection.find(Filters.eq("uuid", plr.uuid())).first();
+                    Date date = new Date();
+                    long banTime = date.getTime() + Ploogin.time*86400000;
+                    String timeUntilUnban = Bundle.formatDate(Ploogin.time*86400000);
+                    plr.con.kick("You have been banned for: " + Ploogin.reason + ". Wait " + timeUntilUnban + " until unban!", 0);
+                    Call.sendMessage(plr.plainName() + " has been banned for: " + Ploogin.reason);
                     Bson updates = Updates.combine(
                             Updates.set("lastBan", banTime)
                     );

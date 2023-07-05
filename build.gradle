@@ -34,16 +34,12 @@ dependencies {
     compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
     compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
     compileOnly "com.github.Anuken.Mindustry:server:$mindustryVersion"
+    implementation "com.github.xzxadixzx.useful-stuffs:bundle:3c4241ca6d"
     implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
     implementation "org.javacord:javacord:3.8.0"
     implementation "org.mongodb:mongodb-driver-sync:4.10.1"
     implementation "org.mongodb:mongodb-driver-core:4.10.1"
     implementation "org.mongodb:bson:4.10.1"
-    //implementation 'org.mariadb.jdbc:mariadb-java-client:3.1.2'
-    //implementation 'com.theokanning.openai-gpt3-java:service:0.11.1'
-    //implementation 'org.springframework.boot:spring-boot-starter-web'
-    //implementation "org.xerial:sqlite-jdbc:3.39.4.1"
-    //implementation "com.j256.ormlite:ormlite-jdbc:6.1"
 }
 
 jar {
