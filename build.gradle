@@ -35,6 +35,7 @@ dependencies {
     compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
     compileOnly "com.github.Anuken.Mindustry:server:$mindustryVersion"
     implementation "com.github.xzxadixzx.useful-stuffs:bundle:3c4241ca6d"
+    implementation "com.github.xzxadixzx.useful-stuffs:menu:3c4241ca6d"
     implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
     implementation "org.javacord:javacord:3.8.0"
     implementation "org.mongodb:mongodb-driver-sync:4.10.1"

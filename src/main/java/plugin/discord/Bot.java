@@ -3,6 +3,7 @@ package plugin.discord;
 import arc.Core;
 import arc.Events;
 import arc.util.Log;
+import com.mongodb.client.model.Filters;
 import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.core.GameState;
@@ -12,6 +13,7 @@ import mindustry.gen.Call;
 import mindustry.gen.Groups;
 import mindustry.maps.Map;
 import mindustry.net.Packets;
+import org.bson.Document;
 import org.javacord.api.*;
 import mindustry.mod.*;
 import org.javacord.api.entity.channel.TextChannel;
@@ -22,15 +24,11 @@ import org.javacord.api.event.interaction.SlashCommandCreateEvent;
 import org.javacord.api.event.message.MessageCreateEvent;
 import org.javacord.api.interaction.*;
 import plugin.utils.Utilities;
-import java.lang.reflect.Member;
-import java.util.Arrays;
 import java.util.Collections;
 import mindustry.gen.Player;
-
 import plugin.ConfigJson;
-
-import static arc.util.Strings.stripColors;
 import static mindustry.Vars.*;
+import static plugin.Ploogin.playerCollection;
 
 public class Bot {
     // variables for load function
@@ -144,10 +142,12 @@ public class Bot {
                 StringBuilder list = new StringBuilder();
                 list.append("```Players online: ").append(Groups.player.size()).append("\n\n");
                 for (Player player : Groups.player){
+                    Document user = playerCollection.find(Filters.eq("uuid", player.uuid())).first();
+                    int id = user.getInteger("id");
                     if (player.admin()){
-                        list.append("# [A] " + player.plainName()).append("; ID: " + player.id()).append("\n");
+                        list.append("# [A] " + player.plainName()).append("; ID: " + id).append("\n");
                     } else {
-                        list.append("# " + player.plainName()).append("; ID: " + player.id()).append("\n");
+                        list.append("# " + player.plainName()).append("; ID: " + id).append("\n");
                     }
                 }
                 list.append("```");
