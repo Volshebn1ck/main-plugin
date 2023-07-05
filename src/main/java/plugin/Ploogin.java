@@ -53,7 +53,7 @@ public class Ploogin extends Plugin implements ApplicationListener{
         Document plrDoc = new Document("_id", id);
         plrDoc.append("id", playerCollection.countDocuments());
         plrDoc.append("uuid", eventPlayer.uuid());
-        plrDoc.append("lastBan", "0");
+        plrDoc.append("lastBan", 0);
         Document chk = playerCollection.find(Filters.eq("uuid", eventPlayer.uuid())).first();
         if (chk == null){
             playerCollection.insertOne(plrDoc);
