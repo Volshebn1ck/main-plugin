@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Date;
 
 import static mindustry.Vars.mods;
+import static mindustry.Vars.player;
 import static plugin.commands.BanMenu.loadBanMenu;
 import static plugin.functions.MongoDB.MongoDbPlayerCreation;
 import static plugin.functions.MongoDB.MongoDbPlayerRankCheck;

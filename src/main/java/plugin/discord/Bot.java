@@ -29,6 +29,7 @@ import org.javacord.api.event.interaction.SlashCommandCreateEvent;
 import org.javacord.api.event.message.MessageCreateEvent;
 import org.javacord.api.interaction.*;
 import plugin.Ploogin;
+import plugin.utils.MenuHandler;
 import plugin.utils.Utilities;
 
 import java.time.Duration;
@@ -44,6 +45,8 @@ import useful.Bundle;
 
 import static mindustry.Vars.*;
 import static plugin.Ploogin.playerCollection;
+import static plugin.utils.MenuHandler.loginMenu;
+import static plugin.utils.MenuHandler.loginMenuFunction;
 import static plugin.utils.Utilities.findPlayerByName;
 
 public class Bot {
@@ -130,6 +133,15 @@ public class Bot {
         SlashCommand gameoverCommand = SlashCommand.with("gameover", "Executes gameover event"
         ).setDefaultEnabledForPermissions(PermissionType.KICK_MEMBERS)
                 .createGlobal(api).join();
+        SlashCommand loginCommand = SlashCommand.with("login", "Connects your discord and mindustry account!",
+                        Arrays.asList(
+                                SlashCommandOption.create(
+                                        SlashCommandOptionType.LONG,
+                                        "id",
+                                        "id",
+                                        true
+                                ))
+                ).createGlobal(api).join();
     }
     // calling slash command functions once they got used
     private static void addSlashCommandListener(SlashCommandCreateEvent listener) {
@@ -220,6 +232,22 @@ public class Bot {
             case "gameover" -> {
                 Events.fire(new EventType.GameOverEvent(Team.derelict));
                 listener.getSlashCommandInteraction().createImmediateResponder().setContent("Gameover executed!").respond(); return;
+            }
+            case "login" -> {
+                int id = Math.toIntExact(listener.getSlashCommandInteraction().getOptionByName("id").get().getLongValue().get());
+                Document user = playerCollection.find(Filters.eq("id", id)).first();
+                if (user == null){
+                    listener.getSlashCommandInteraction().createImmediateResponder().setContent("This player doesnt exists!").respond();
+                    return;
+                }
+                Player player = Groups.player.find(p -> p.uuid().equals(user.getString("uuid")));
+                if (player == null){
+                    listener.getSlashCommandInteraction().createImmediateResponder().setContent("This player doesnt exists or offline!").respond();
+                    return;
+                }
+                loginMenuFunction(listener);
+                Call.menu(player.con, loginMenu, "Request", listener.getInteraction().getUser().getName() + " requests to connect your mindustry account", new String[][]{{"Connect"}, {"Cancel"}});
+                listener.getSlashCommandInteraction().createImmediateResponder().setContent("req sended!").respond();
             }
           }
         }

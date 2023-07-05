@@ -9,11 +9,14 @@ import mindustry.ui.Menus;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
+import org.javacord.api.event.interaction.SlashCommandCreateEvent;
+import org.javacord.api.listener.interaction.SlashCommandCreateListener;
 import plugin.Ploogin;
 import plugin.discord.Bot;
 import useful.Bundle;
 import useful.text.TextInput;
 
+import javax.print.Doc;
 import java.awt.*;
 import java.util.Date;
 
@@ -36,5 +39,27 @@ public class MenuHandler {
                 }
             }
         }));
-
+        public static int loginMenu;
+        public static void loginMenuFunction(SlashCommandCreateEvent listener){
+            loginMenu = Menus.registerMenu(((player, option) -> {
+                switch (option){
+                    case -1 -> {
+                        return;
+                    }
+                    case 0 -> {
+                        long discordId = listener.getInteraction().getUser().getId();
+                        Document user = Ploogin.playerCollection.find(Filters.eq("uuid", player.uuid())).first();
+                        Bson updates = Updates.combine(
+                                Updates.set("discordid", discordId)
+                        );
+                        Ploogin.playerCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
+                        player.sendMessage("[blue]Successfully connected your discord: " + listener.getInteraction().getUser().getName());
+                        listener.getSlashCommandInteraction().createImmediateResponder().setContent("Successfully connected your mindustry account!").respond();
+                    }
+                    case 1 -> {
+                        return;
+                    }
+                }
+        }));
+    }
 }

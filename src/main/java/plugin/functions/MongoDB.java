@@ -11,6 +11,7 @@ import static plugin.Ploogin.playerCollection;
 public class MongoDB {
     public static void MongoDbPlayerCreation(Player eventPlayer){
         long lastBan = 0;
+        long discordid = 0;
         var id = new ObjectId();
         Document plrDoc = new Document("_id", id);
         plrDoc.append("id", (int) playerCollection.countDocuments());
@@ -18,6 +19,7 @@ public class MongoDB {
         plrDoc.append("name", eventPlayer.name());
         plrDoc.append("rank", 0);
         plrDoc.append("lastBan", lastBan);
+        plrDoc.append("discordid", discordid);
         Document chk = playerCollection.find(Filters.eq("uuid", eventPlayer.uuid())).first();
         if (chk == null){
             playerCollection.insertOne(plrDoc);
