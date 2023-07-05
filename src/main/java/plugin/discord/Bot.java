@@ -4,6 +4,8 @@ import arc.Core;
 import arc.Events;
 import arc.util.Log;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.Updates;
 import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.core.GameState;
@@ -14,21 +16,32 @@ import mindustry.gen.Groups;
 import mindustry.maps.Map;
 import mindustry.net.Packets;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.javacord.api.*;
 import mindustry.mod.*;
 import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.intent.Intent;
 import org.javacord.api.entity.message.Message;
+import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.PermissionType;
 import org.javacord.api.event.interaction.SlashCommandCreateEvent;
 import org.javacord.api.event.message.MessageCreateEvent;
 import org.javacord.api.interaction.*;
+import plugin.Ploogin;
 import plugin.utils.Utilities;
+
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
+
 import mindustry.gen.Player;
 import plugin.ConfigJson;
+import useful.Bundle;
+
 import static mindustry.Vars.*;
 import static plugin.Ploogin.playerCollection;
+import static plugin.utils.Utilities.findPlayerByName;
 
 public class Bot {
     // variables for load function
@@ -36,6 +49,7 @@ public class Bot {
     public static TextChannel channel;
     public static TextChannel banchannel;
     // main bot
+    @SuppressWarnings("UnnecessaryLocalVariable")
     public static void load(){
         api =  new DiscordApiBuilder()
                 .setToken(ConfigJson.token)
@@ -73,13 +87,26 @@ public class Bot {
     // registers slash commands so user can see them and use
     private static void registerSlashCommands(){
         SlashCommand banCommand = SlashCommand.with("ban", "Bans the player",
-                Collections.singletonList(
-                        SlashCommandOption.create(
-                                SlashCommandOptionType.STRING,
-                                "name",
-                                "name of the player"
-                )
-                )
+                        Arrays.asList(
+                                SlashCommandOption.create(
+                                        SlashCommandOptionType.LONG,
+                                        "id",
+                                        "id of the player",
+                                        true
+                                ),
+                                SlashCommandOption.create(
+                                        SlashCommandOptionType.LONG,
+                                        "time",
+                                        "Duration of ban (in days)",
+                                        true
+                                ),
+                                SlashCommandOption.create(
+                                        SlashCommandOptionType.STRING,
+                                        "reason",
+                                        "Reason of ban",
+                                        true
+                                )
+                        )
         ).setDefaultEnabledForPermissions(PermissionType.KICK_MEMBERS)
                 .createGlobal(api).join();
         SlashCommand exitCommand = SlashCommand.with("exit", "exits the servar"
@@ -88,13 +115,13 @@ public class Bot {
         SlashCommand listCommand = SlashCommand.with("list", "Lists the players"
         ).createGlobal(api).join();
         SlashCommand adminaddCommand = SlashCommand.with("adminadd", "gives admin to player (use it carefully)",
-                Collections.singletonList(
-                        SlashCommandOption.create(
-                                SlashCommandOptionType.STRING,
-                                "name",
-                                "name of the player"
-                        )
-                )
+                        Arrays.asList(
+                                SlashCommandOption.create(
+                                        SlashCommandOptionType.STRING,
+                                        "name",
+                                        "name of the player",
+                                        true
+                                ))
                 ).setDefaultEnabledForPermissions(PermissionType.KICK_MEMBERS)
                 .createGlobal(api).join();
         SlashCommand gameoverCommand = SlashCommand.with("gameover", "Executes gameover event"
@@ -112,24 +139,43 @@ public class Bot {
 
                 String response;
 
-                String PlayerName = listener.getSlashCommandInteraction().getOptionByName("name").get().getStringValue().get();
-                Player player = Utilities.findPlayerByName(PlayerName);
-                if (player == null) {
+                int id = Math.toIntExact(listener.getSlashCommandInteraction().getOptionByName("id").get().getLongValue().get());
+                String reason = listener.getSlashCommandInteraction().getOptionByName("reason").get().getStringValue().get();
+                Long time = listener.getSlashCommandInteraction().getOptionByName("time").get().getLongValue().get();
+                Date date = new Date();
+                long banTime = date.getTime() + time*86400000;
+                String timeUntilUnban = Bundle.formatDuration(Duration.ofDays(time));
+                Document user = playerCollection.find(Filters.eq("id", id)).first();
+                if (user == null) {
                     response = "Could not find that player.";
                     listener.getSlashCommandInteraction()
                             .createImmediateResponder().setContent(response)
                             .respond();
                     return;
                 }
-                if (player.admin()){
+                Player plr = Groups.player.find(p -> p.uuid().equals(user.getString("uuid")));
+                if (user.getInteger("rank") == 2 || user.getInteger("rank") == 1){
                     listener.getSlashCommandInteraction().createImmediateResponder().setContent("You cant ban an admin!").respond(); return;
                 }
-                netServer.admins.banPlayerID(player.uuid());
-                netServer.admins.banPlayerIP(netServer.admins.getInfo(player.uuid()).lastIP);
-                player.con.kick(Packets.KickReason.banned);
+                if (plr == null) {
+                    Log.info("Player is offline, not kicking him");
+                } else {
+                    plr.con.kick("You have been banned for: " + reason + ". Wait " + timeUntilUnban + " until unban!", 0);
+                }
                 listener.getSlashCommandInteraction()
-                        .createImmediateResponder().setContent("Banned: " + PlayerName)
+                        .createImmediateResponder().setContent("Banned: " + user.getString("name"))
                         .respond();
+
+                Call.sendMessage(user.getString("name") +" has been banned for: " + reason);
+                Bson updates = Updates.combine(
+                        Updates.set("lastBan", banTime)
+                );
+                Ploogin.playerCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
+                EmbedBuilder embed = new EmbedBuilder()
+                        .setTitle("Ban event")
+                        .setDescription(user.getString("name") + " has been banned for: " + reason)
+                        .addField("Moderator", listener.getInteraction().getUser().getName());
+                Bot.banchannel.sendMessage(embed);
                 return;
              }
             case "exit" -> {
@@ -157,8 +203,8 @@ public class Bot {
                 return;
             }
             case "adminadd" -> {
-                String PlayerName = listener.getSlashCommandInteraction().getOptionByName("name").get().getStringValue().get();
-                Player player = Utilities.findPlayerByName(PlayerName);
+                String name = listener.getSlashCommandInteraction().getOptionByName("name").get().getStringValue().get();
+                Player player = findPlayerByName(name);
                 if (player == null){
                     listener.getSlashCommandInteraction().createImmediateResponder().setContent("No such player!").respond(); return;
                 }

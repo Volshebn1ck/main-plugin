@@ -9,6 +9,7 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
+import mindustry.Vars;
 import mindustry.game.*;
 import mindustry.gen.Call;
 import mindustry.gen.Groups;
@@ -23,6 +24,7 @@ import useful.Bundle;
 import java.io.IOException;
 import java.util.Date;
 
+import static mindustry.Vars.mods;
 import static plugin.commands.BanMenu.loadBanMenu;
 import static plugin.functions.MongoDB.MongoDbPlayerCreation;
 import static plugin.functions.MongoDB.MongoDbPlayerRankCheck;
@@ -55,7 +57,7 @@ public class Ploogin extends Plugin implements ApplicationListener{
         Events.on(EventType.PlayerJoin.class, event -> {
             Player plr = event.player;
             MongoDbPlayerCreation(plr);
-            MongoDbPlayerRankCheck(plr);
+            MongoDbPlayerRankCheck(plr.uuid());
         });
         Events.on(EventType.PlayerConnect.class, event -> {
             Document user = playerCollection.find(Filters.eq("uuid", event.player.uuid())).first();
@@ -97,8 +99,10 @@ public class Ploogin extends Plugin implements ApplicationListener{
             }
             player.sendMessage(String.valueOf(list));
         });
-        /*handler.<Player>register("js", "<code...>", "Execute JavaScript code.", (args, player) -> {
-            if (player.admin()) {
+        handler.<Player>register("js", "<code...>", "Execute JavaScript code.", (args, player) -> {
+            Document user = playerCollection.find(Filters.eq("uuid", player.uuid())).first();
+            boolean isConsole = user.getInteger("rank") == 2;
+            if (player.admin() && isConsole) {
                 try {
                     String output = mods.getScripts().runConsole(args[0]);
                     player.sendMessage("> " + ("[#ff341c]" + output));
@@ -107,9 +111,9 @@ public class Ploogin extends Plugin implements ApplicationListener{
                     return;
                 }
             } else {
-                player.sendMessage("[scarlet]You must be admin to use this command.");
+                player.sendMessage("[scarlet]You must be console to use this command.");
             }
-        });*/
+        });
     }
     // shit to register console commands because yes
     @Override
@@ -134,6 +138,7 @@ public class Ploogin extends Plugin implements ApplicationListener{
             );
             playerCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
             Log.info("Rank has been given!");
+            MongoDbPlayerRankCheck(user.getString("uuid"));
         });
     }
 }

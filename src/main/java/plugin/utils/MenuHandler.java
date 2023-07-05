@@ -23,34 +23,6 @@ import static plugin.ConfigJson.discordurl;
 public class MenuHandler {
         public static Player plr = Ploogin.victim;
         public static Player moderator = Ploogin.moderator;
-        public static int banMenu = Menus.registerMenu((player, option) -> {
-            switch (option) {
-                case -1 -> {
-                    return;
-                }
-                case 0 -> {
-                    Document usr = Ploogin.playerCollection.find(Filters.eq("uuid", plr.uuid())).first();
-                    Date date = new Date();
-                    long banTime = date.getTime() + Ploogin.time*86400000;
-                    String timeUntilUnban = Bundle.formatDuration(Ploogin.time*86400000);
-                    plr.con.kick("You have been banned for: " + Ploogin.reason + ". Wait " + timeUntilUnban + " until unban!", 0);
-                    Call.sendMessage(plr.plainName() + " has been banned for: " + Ploogin.reason);
-                    Bson updates = Updates.combine(
-                            Updates.set("lastBan", banTime)
-                    );
-                    Ploogin.playerCollection.updateOne(usr, updates, new UpdateOptions().upsert(true));
-                    EmbedBuilder embed = new EmbedBuilder()
-                            .setTitle("Ban event")
-                            .setDescription(plr.plainName() + " has been banned for: " + Ploogin.reason)
-                            .setColor(Color.RED)
-                            .addField("Moderator", moderator.plainName());
-                    Bot.banchannel.sendMessage(embed);
-                }
-                case 1 -> {
-                    return;
-                }
-            }
-        });
         public static int welcomeMenu = Menus.registerMenu(((player, option) -> {
             switch (option){
                 case -1 -> {
