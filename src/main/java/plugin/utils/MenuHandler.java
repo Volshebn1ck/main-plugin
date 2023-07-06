@@ -21,11 +21,11 @@ import java.awt.*;
 import java.util.Date;
 
 import static plugin.ConfigJson.discordurl;
+import static plugin.utils.FindDocument.getDoc;
 
 
 public class MenuHandler {
         public static Player plr = Ploogin.victim;
-        public static Player moderator = Ploogin.moderator;
         public static int welcomeMenu = Menus.registerMenu(((player, option) -> {
             switch (option){
                 case -1 -> {
@@ -48,10 +48,18 @@ public class MenuHandler {
                     }
                     case 0 -> {
                         long discordId = listener.getInteraction().getUser().getId();
-                        Document user = Ploogin.playerCollection.find(Filters.eq("uuid", player.uuid())).first();
-                        Bson updates = Updates.combine(
-                                Updates.set("discordid", discordId)
-                        );
+                        Document user = getDoc(player.uuid());
+                        Bson updates;
+                        if (user.getInteger("rank") == 0){
+                            updates = Updates.combine(
+                                    Updates.set("discordid", discordId),
+                                    Updates.set("rank", 1)
+                            );
+                        } else{
+                            updates = Updates.combine(
+                                    Updates.set("discordid", discordId)
+                            );
+                        }
                         Ploogin.playerCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
                         player.sendMessage("[blue]Successfully connected your discord: " + listener.getInteraction().getUser().getName());
                         listener.getSlashCommandInteraction().createImmediateResponder().setContent("Successfully connected your mindustry account!").respond();

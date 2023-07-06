@@ -37,9 +37,12 @@ public class MongoDB {
                 eventPlayer.name = "[white]<P> [orange]" + tempName;
             }
             case 1 ->{
-                eventPlayer.name = "[#f]<A> [orange]" + tempName;
+                eventPlayer.name = "[blue]<T> [orange]" + tempName;
             }
             case 2 ->{
+                eventPlayer.name = "[#f]<A> [orange]" + tempName;
+            }
+            case 3 ->{
                 eventPlayer.name = "[purple]<C> [orange]" + tempName;
             }
         }

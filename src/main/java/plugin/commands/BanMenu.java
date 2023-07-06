@@ -19,17 +19,19 @@ import useful.*;
 import useful.text.TextInput;
 import useful.State.StateKey;
 
+import java.awt.*;
 import java.time.Duration;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import static mindustry.Vars.*;
+import static plugin.ConfigJson.discordurl;
+import static plugin.discord.Embed.banEmbed;
 
 public class BanMenu {
 
     public static final StateKey<Player> TARGET = new StateKey<>("target");
     public static final StateKey<Integer> DURATION = new StateKey<>("duration");
-    public static Player moderator = Ploogin.moderator;
 
     public static final TextInput
             durationInput = new TextInput(),
@@ -111,23 +113,17 @@ public class BanMenu {
             input.result((view, text) -> {
                 var target = view.state.get(TARGET);
                 long duration = view.state.get(DURATION);
-                Document usr = Ploogin.playerCollection.find(Filters.eq("uuid", target.uuid())).first();
+                Document user = Ploogin.playerCollection.find(Filters.eq("uuid", target.uuid())).first();
                 Date date = new Date();
                 long banTime = date.getTime() + TimeUnit.DAYS.toMillis(duration);
                 String timeUntilUnban = Bundle.formatDuration(Duration.ofDays(duration));
-                target.con.kick("You have been banned for: " + text + ". Wait " + timeUntilUnban + " until unban!", 0);
+                target.con.kick("[red]You have been banned!\n\n" + "[white]Reason: " + text +"\nDuration: " + timeUntilUnban + " until unban\nIf you think this is a mistake, make sure to appeal ban in our discord: " + discordurl, 0);
                 Call.sendMessage(target.plainName() + " has been banned for: " + text);
                 Bson updates = Updates.combine(
                         Updates.set("lastBan", banTime)
                 );
-                Ploogin.playerCollection.updateOne(usr, updates, new UpdateOptions().upsert(true));
-                EmbedBuilder embed = new EmbedBuilder()
-                        .setTitle("Ban event")
-                        .setDescription(target.plainName() + " has been banned for: " + text)
-                        .addField("Moderator", moderator.plainName());
-                Bot.banchannel.sendMessage(embed);
-
-
+                Ploogin.playerCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
+                Bot.banchannel.sendMessage(banEmbed(user,text,banTime, view.player.plainName()));
             });
         });
     }

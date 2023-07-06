@@ -1,10 +1,19 @@
 package plugin.functions;
 
+import com.mongodb.client.model.Filters;
 import mindustry.gen.Call;
 import mindustry.gen.Player;
+import org.bson.Document;
 import plugin.utils.MenuHandler;
+import useful.Bundle;
+
+import java.util.Date;
+
+import static plugin.ConfigJson.discordurl;
+import static plugin.Ploogin.playerCollection;
 
 public class Other {
+
     public static void welcomeMenu(Player player){
         String title = "\uE86B Welcome!";
         String description = "[orange]Welcome to our server!\n\n" +
@@ -19,4 +28,17 @@ public class Other {
         String button2 = "[blue]\uE80D Join our discord!";
         Call.menu(player.con, MenuHandler.welcomeMenu, title, description, new String[][]{{button1}, {button2}});
     }
+    public static void kickIfBanned(Player player){
+        Document user = playerCollection.find(Filters.eq("uuid", player.uuid())).first();
+        if (user == null){
+            return;
+        }
+        long lastBan = user.getLong("lastBan");
+        Date date = new Date();
+        if (lastBan > date.getTime()) {
+            String timeUntilUnban = Bundle.formatDuration(lastBan - date.getTime());
+            player.con.kick("[red]You have been banned!\n\n" +"[white]Duration: " + timeUntilUnban + " until unban\n\nIf you think this is a mistake, make sure to appeal ban in our discord: " + discordurl, 0);
+        }
+    }
+
 }

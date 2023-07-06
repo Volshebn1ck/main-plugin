@@ -26,10 +26,13 @@ import java.util.Date;
 
 import static mindustry.Vars.mods;
 import static mindustry.Vars.player;
+import static plugin.ConfigJson.discordurl;
 import static plugin.commands.BanMenu.loadBanMenu;
 import static plugin.functions.MongoDB.MongoDbPlayerCreation;
 import static plugin.functions.MongoDB.MongoDbPlayerRankCheck;
+import static plugin.functions.Other.kickIfBanned;
 import static plugin.functions.Other.welcomeMenu;
+import static plugin.utils.Checks.isConsole;
 
 
 public class Ploogin extends Plugin implements ApplicationListener{
@@ -38,7 +41,6 @@ public class Ploogin extends Plugin implements ApplicationListener{
     public static MongoCollection<Document> playerCollection;
     public static Player victim;
     public static String reason;
-    public static Player moderator;
 
     public static long time;
 
@@ -63,16 +65,7 @@ public class Ploogin extends Plugin implements ApplicationListener{
             MongoDbPlayerRankCheck(plr.uuid());
         });
         Events.on(EventType.PlayerConnect.class, event -> {
-            Document user = playerCollection.find(Filters.eq("uuid", event.player.uuid())).first();
-            if (user == null){
-                return;
-            }
-            long lastBan = user.getLong("lastBan");
-            Date date = new Date();
-            if (lastBan > date.getTime()) {
-                String timeUntilUnban = Bundle.formatDuration(lastBan - date.getTime());
-                event.player.con.kick("You have been banned! Wait " + timeUntilUnban + " more for unban!", 0);
-            }
+            kickIfBanned(event.player);
         });
     }
 
@@ -104,8 +97,7 @@ public class Ploogin extends Plugin implements ApplicationListener{
         });
         handler.<Player>register("js", "<code...>", "Execute JavaScript code.", (args, player) -> {
             Document user = playerCollection.find(Filters.eq("uuid", player.uuid())).first();
-            boolean isConsole = user.getInteger("rank") == 2;
-            if (player.admin() && isConsole) {
+            if (player.admin() && isConsole(player.uuid())) {
                 try {
                     String output = mods.getScripts().runConsole(args[0]);
                     player.sendMessage("> " + ("[#ff341c]" + output));

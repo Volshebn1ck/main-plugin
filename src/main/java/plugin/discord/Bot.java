@@ -3,51 +3,50 @@ package plugin.discord;
 import arc.Core;
 import arc.Events;
 import arc.util.Log;
-import arc.util.Strings;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
-import mindustry.Vars;
-import mindustry.content.Blocks;
 import mindustry.core.GameState;
 import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.gen.Groups;
-import mindustry.maps.Map;
-import mindustry.net.Packets;
+import mindustry.gen.Player;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.javacord.api.*;
-import mindustry.mod.*;
+import org.javacord.api.DiscordApi;
+import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.intent.Intent;
-import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.PermissionType;
 import org.javacord.api.event.interaction.SlashCommandCreateEvent;
 import org.javacord.api.event.message.MessageCreateEvent;
-import org.javacord.api.interaction.*;
+import org.javacord.api.interaction.SlashCommand;
+import org.javacord.api.interaction.SlashCommandInteractionOption;
+import org.javacord.api.interaction.SlashCommandOption;
+import org.javacord.api.interaction.SlashCommandOptionType;
+import plugin.ConfigJson;
 import plugin.Ploogin;
-import plugin.utils.MenuHandler;
-import plugin.utils.Utilities;
+import useful.Bundle;
 
+import java.awt.*;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-import mindustry.gen.Player;
-import plugin.ConfigJson;
-import useful.Action;
-import useful.Bundle;
-
+import static arc.util.Strings.stripColors;
 import static mindustry.Vars.*;
+import static plugin.ConfigJson.discordurl;
 import static plugin.Ploogin.playerCollection;
+import static plugin.discord.Embed.banEmbed;
+import static plugin.utils.Checks.isAdmin;
+import static plugin.utils.FindDocument.getDoc;
 import static plugin.utils.MenuHandler.loginMenu;
 import static plugin.utils.MenuHandler.loginMenuFunction;
-import static plugin.utils.Utilities.findPlayerByName;
+import static plugin.utils.Utilities.*;
 
 public class Bot {
     // variables for load function
@@ -55,7 +54,6 @@ public class Bot {
     public static TextChannel channel;
     public static TextChannel banchannel;
     // main bot
-    @SuppressWarnings("UnnecessaryLocalVariable")
     public static void load(){
         api =  new DiscordApiBuilder()
                 .setToken(ConfigJson.token)
@@ -121,7 +119,7 @@ public class Bot {
         SlashCommand listCommand = SlashCommand.with("list", "Lists the players"
         ).createGlobal(api).join();
         SlashCommand adminaddCommand = SlashCommand.with("adminadd", "gives admin to player (use it carefully)",
-                        Arrays.asList(
+                        Collections.singletonList(
                                 SlashCommandOption.create(
                                         SlashCommandOptionType.STRING,
                                         "name",
@@ -134,14 +132,27 @@ public class Bot {
         ).setDefaultEnabledForPermissions(PermissionType.KICK_MEMBERS)
                 .createGlobal(api).join();
         SlashCommand loginCommand = SlashCommand.with("login", "Connects your discord and mindustry account!",
-                        Arrays.asList(
-                                SlashCommandOption.create(
-                                        SlashCommandOptionType.LONG,
-                                        "id",
-                                        "id",
-                                        true
-                                ))
+                Collections.singletonList(
+                        SlashCommandOption.create(
+                                SlashCommandOptionType.LONG,
+                                "id",
+                                "id",
+                                true
+                        ))
                 ).createGlobal(api).join();
+        SlashCommand getInfoCommand = SlashCommand.with("stats", "Gets stats of player",
+                Arrays.asList(
+                        SlashCommandOption.create(
+                                SlashCommandOptionType.LONG,
+                                "id",
+                                "Player id"
+                        ),
+                        SlashCommandOption.create(
+                                SlashCommandOptionType.STRING,
+                                "name",
+                                "Player name"
+                        ))
+        ).createGlobal(api).join();
     }
     // calling slash command functions once they got used
     private static void addSlashCommandListener(SlashCommandCreateEvent listener) {
@@ -160,7 +171,7 @@ public class Bot {
                 Date date = new Date();
                 long banTime = date.getTime() + TimeUnit.DAYS.toMillis(time);
                 String timeUntilUnban = Bundle.formatDuration(Duration.ofDays(time));
-                Document user = playerCollection.find(Filters.eq("id", id)).first();
+                Document user = getDoc(id);
                 if (user == null) {
                     response = "Could not find that player.";
                     listener.getSlashCommandInteraction()
@@ -169,30 +180,27 @@ public class Bot {
                     return;
                 }
                 Player plr = Groups.player.find(p -> p.uuid().equals(user.getString("uuid")));
-                if (user.getInteger("rank") == 2 || user.getInteger("rank") == 1){
-                    listener.getSlashCommandInteraction().createImmediateResponder().setContent("You cant ban an admin!").respond(); return;
+                if (isAdmin(id)) {
+                    listener.getSlashCommandInteraction().createImmediateResponder().setContent("You cant ban an admin!").respond();
+                    return;
                 }
                 if (plr == null) {
                     Log.info("Player is offline, not kicking him");
                 } else {
-                    plr.con.kick("You have been banned for: " + reason + ". Wait " + timeUntilUnban + " until unban!", 0);
+                    plr.con.kick("[red]You have been banned!\n\n" + "[white]Reason: " + reason + "\nDuration: " + timeUntilUnban + " until unban\nIf you think this is a mistake, make sure to appeal ban in our discord: " + discordurl, 0);
                 }
                 listener.getSlashCommandInteraction()
                         .createImmediateResponder().setContent("Banned: " + user.getString("name"))
                         .respond();
 
-                Call.sendMessage(user.getString("name") +" has been banned for: " + reason);
+                Call.sendMessage(user.getString("name") + " has been banned for: " + reason);
                 Bson updates = Updates.combine(
                         Updates.set("lastBan", banTime)
                 );
                 Ploogin.playerCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
-                EmbedBuilder embed = new EmbedBuilder()
-                        .setTitle("Ban event")
-                        .setDescription(user.getString("name") + " has been banned for: " + reason)
-                        .addField("Moderator", listener.getInteraction().getUser().getName());
-                Bot.banchannel.sendMessage(embed);
+                Bot.banchannel.sendMessage(banEmbed(user, reason, banTime, listener.getInteraction().getUser().getName()));
                 return;
-             }
+            }
             case "exit" -> {
                  Log.info("Stopping server");
                  api.disconnect();
@@ -235,7 +243,7 @@ public class Bot {
             }
             case "login" -> {
                 int id = Math.toIntExact(listener.getSlashCommandInteraction().getOptionByName("id").get().getLongValue().get());
-                Document user = playerCollection.find(Filters.eq("id", id)).first();
+                Document user = getDoc(id);
                 if (user == null){
                     listener.getSlashCommandInteraction().createImmediateResponder().setContent("This player doesnt exists!").respond();
                     return;
@@ -248,6 +256,31 @@ public class Bot {
                 loginMenuFunction(listener);
                 Call.menu(player.con, loginMenu, "Request", listener.getInteraction().getUser().getName() + " requests to connect your mindustry account", new String[][]{{"Connect"}, {"Cancel"}});
                 listener.getSlashCommandInteraction().createImmediateResponder().setContent("req sended!").respond();
+            }
+            case "stats" -> {
+                int id = Math.toIntExact(listener.getSlashCommandInteraction().getOptionByName("id").flatMap(SlashCommandInteractionOption::getLongValue).orElse(2147483647L));
+                String name= listener.getSlashCommandInteraction().getOptionByName("name").flatMap(SlashCommandInteractionOption::getStringValue).orElse("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa");
+                Player player = notNullElse(findPlayerByName(name), findPlayerByID(id));
+                if (player == null) {
+
+                }
+                Document user = notNullElse(getDoc(id), getDoc(player.uuid()));
+                if (user == null){
+                    listener.getSlashCommandInteraction().createImmediateResponder().setContent("Could not find that player!").respond();
+                    return;
+                }
+                String discordId = String.valueOf(user.getLong("discordid"));
+                if (discordId == null){
+                    discordId = "none";
+                }
+                EmbedBuilder embed = new EmbedBuilder()
+                        .setTitle("Information")
+                        .setColor(Color.RED)
+                        .addField("Name", stripColors(user.getString("name")))
+                        .addField("ID", String.valueOf(user.getInteger("id")))
+                        .addField("Rank", String.valueOf(user.getInteger("rank")))
+                        .addField("Discord (if linked)", "<@" +discordId +">");
+                listener.getSlashCommandInteraction().createImmediateResponder().addEmbed(embed).respond();
             }
           }
         }
