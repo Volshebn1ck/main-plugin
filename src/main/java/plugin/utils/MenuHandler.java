@@ -11,6 +11,7 @@ import org.javacord.api.event.interaction.SlashCommandCreateEvent;
 import plugin.Ploogin;
 
 import static plugin.ConfigJson.discordurl;
+import static plugin.functions.MongoDB.MongoDbPlayerRankCheck;
 import static plugin.utils.FindDocument.getDoc;
 
 
@@ -53,6 +54,7 @@ public class MenuHandler {
                         Ploogin.playerCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
                         player.sendMessage("[blue]Successfully connected your discord: " + listener.getInteraction().getUser().getName());
                         listener.getSlashCommandInteraction().createImmediateResponder().setContent("Successfully connected your mindustry account!").respond();
+                        MongoDbPlayerRankCheck(user.getString("uuid"));
                     }
                     case 1 -> {
                         return;

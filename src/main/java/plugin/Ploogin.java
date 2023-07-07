@@ -121,7 +121,13 @@ public class Ploogin extends Plugin implements ApplicationListener{
             }, 1f);
         });
         handler.register("setrank", "<id> <rank>", "Sets rank to player", (args, params) -> {
-            int id = Integer.parseInt(args[0]);
+            int id = 0;
+            try {
+                id = Integer.parseInt(args[0]);
+            } catch (NumberFormatException e){
+                Log.warn("Please, type an ID");
+                return;
+            }
             int rankid = Integer.parseInt(args[1]);
             Document user = playerCollection.find(Filters.eq("id", id)).first();
             if (user == null){

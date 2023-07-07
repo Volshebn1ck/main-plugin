@@ -73,7 +73,6 @@ public class Bot {
     public static void init(){
         Log.info("Bot started");
         Events.on(EventType.PlayerChatEvent.class, event  -> {
-            Document user = getDoc(event.player.uuid());
             if (event.message.startsWith("/")) {
                 return;
             }
@@ -81,11 +80,11 @@ public class Bot {
         });
         Events.on(EventType.PlayerJoin.class, event -> {
             Document user = getDoc(event.player.uuid());
-            channel.sendMessage("`" + event.player.plainName() + " [" + user.getInteger("id") + "]" + " joined the server!" + "`");
+            channel.sendMessage("`" + event.player.plainName() + " joined the server!" + "`");
         });
         Events.on(EventType.PlayerLeave.class, event -> {
             Document user = getDoc(event.player.uuid());
-            channel.sendMessage("`" + event.player.plainName() + " [" + user.getInteger("id") + "]" + " left the server!" + "`");
+            channel.sendMessage("`" + event.player.plainName()  + " left the server!" + "`");
         });
     }
      // creating listener once message is created
