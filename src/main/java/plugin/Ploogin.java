@@ -1,7 +1,10 @@
 package plugin;
 
-import arc.*;
-import arc.util.*;
+import arc.ApplicationListener;
+import arc.Events;
+import arc.util.CommandHandler;
+import arc.util.Log;
+import arc.util.Timer;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
@@ -9,24 +12,21 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
-import mindustry.Vars;
-import mindustry.game.*;
+import mindustry.game.EventType;
+import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.gen.Groups;
-import mindustry.mod.Plugin;
 import mindustry.gen.Player;
+import mindustry.mod.Plugin;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.bson.types.ObjectId;
 import org.json.simple.parser.ParseException;
 import plugin.discord.Bot;
 import useful.Bundle;
+
 import java.io.IOException;
-import java.util.Date;
 
 import static mindustry.Vars.mods;
-import static mindustry.Vars.player;
-import static plugin.ConfigJson.discordurl;
 import static plugin.commands.BanMenu.loadBanMenu;
 import static plugin.functions.MongoDB.*;
 import static plugin.functions.Other.kickIfBanned;

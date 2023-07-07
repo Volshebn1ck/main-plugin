@@ -1,30 +1,34 @@
 package plugin.commands;
 
 import arc.Events;
-import arc.util.*;
+import arc.util.Log;
+import arc.util.Strings;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
 import mindustry.game.EventType.AdminRequestEvent;
 import mindustry.game.Team;
-import mindustry.gen.*;
+import mindustry.gen.AdminRequestCallPacket;
+import mindustry.gen.Call;
+import mindustry.gen.Player;
 import mindustry.net.Administration.TraceInfo;
 import mindustry.net.Packets.KickReason;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.javacord.api.entity.message.embed.EmbedBuilder;
 import plugin.Ploogin;
 import plugin.discord.Bot;
-import useful.*;
-import useful.text.TextInput;
+import useful.Action;
+import useful.Action2;
+import useful.Bundle;
 import useful.State.StateKey;
+import useful.text.TextInput;
 
-import java.awt.*;
 import java.time.Duration;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-import static mindustry.Vars.*;
+import static mindustry.Vars.logic;
+import static mindustry.Vars.net;
 import static plugin.ConfigJson.discordurl;
 import static plugin.discord.Embed.banEmbed;
 

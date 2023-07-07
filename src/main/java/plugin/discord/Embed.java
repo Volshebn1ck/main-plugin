@@ -2,7 +2,6 @@ package plugin.discord;
 
 import org.bson.Document;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
-import org.javacord.api.event.interaction.SlashCommandCreateEvent;
 
 import java.awt.*;
 
