@@ -3,6 +3,7 @@ package plugin.discord;
 import arc.Core;
 import arc.Events;
 import arc.util.Log;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
@@ -36,6 +37,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import static arc.util.Strings.stripColors;
 import static mindustry.Vars.*;
@@ -70,15 +72,21 @@ public class Bot {
     // the stuff that logs if bot is started and also some random events
     public static void init(){
         Log.info("Bot started");
-        Events.on(EventType.PlayerChatEvent.class, event  ->
-            channel.sendMessage("`"+event.player.plainName() + ": " + event.message+"`")
-        );
-        Events.on(EventType.PlayerJoin.class, event ->
-            channel.sendMessage("`"+event.player.plainName() + " joined the server!"+"`")
-        );
-        Events.on(EventType.PlayerLeave.class, event ->
-            channel.sendMessage("`"+event.player.plainName() + " left the server!"+"`")
-        );
+        Events.on(EventType.PlayerChatEvent.class, event  -> {
+            Document user = getDoc(event.player.uuid());
+            if (event.message.startsWith("/")) {
+                return;
+            }
+            channel.sendMessage("`" + event.player.plainName() + ": " + event.message + "`");
+        });
+        Events.on(EventType.PlayerJoin.class, event -> {
+            Document user = getDoc(event.player.uuid());
+            channel.sendMessage("`" + event.player.plainName() + " [" + user.getInteger("id") + "]" + " joined the server!" + "`");
+        });
+        Events.on(EventType.PlayerLeave.class, event -> {
+            Document user = getDoc(event.player.uuid());
+            channel.sendMessage("`" + event.player.plainName() + " [" + user.getInteger("id") + "]" + " left the server!" + "`");
+        });
     }
      // creating listener once message is created
     private static void onMessageCreate(MessageCreateEvent listener){
@@ -151,6 +159,15 @@ public class Bot {
                                 SlashCommandOptionType.STRING,
                                 "name",
                                 "Player name"
+                        ))
+        ).createGlobal(api).join();
+        SlashCommand searchCommand = SlashCommand.with("search", "Searchs the players in db",
+                Collections.singletonList(
+                        SlashCommandOption.create(
+                                SlashCommandOptionType.STRING,
+                                "name",
+                                "Player name",
+                                true
                         ))
         ).createGlobal(api).join();
     }
@@ -260,17 +277,13 @@ public class Bot {
             case "stats" -> {
                 int id = Math.toIntExact(listener.getSlashCommandInteraction().getOptionByName("id").flatMap(SlashCommandInteractionOption::getLongValue).orElse(2147483647L));
                 String name= listener.getSlashCommandInteraction().getOptionByName("name").flatMap(SlashCommandInteractionOption::getStringValue).orElse("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa");
-                Player player = notNullElse(findPlayerByName(name), findPlayerByID(id));
-                if (player == null) {
-
-                }
-                Document user = notNullElse(getDoc(id), getDoc(player.uuid()));
+                Document user = notNullElse(getDoc(id), getDoc(name));
                 if (user == null){
                     listener.getSlashCommandInteraction().createImmediateResponder().setContent("Could not find that player!").respond();
                     return;
                 }
                 String discordId = String.valueOf(user.getLong("discordid"));
-                if (discordId == null){
+                if (discordId.equals("0")){
                     discordId = "none";
                 }
                 EmbedBuilder embed = new EmbedBuilder()
@@ -281,6 +294,23 @@ public class Bot {
                         .addField("Rank", String.valueOf(user.getInteger("rank")))
                         .addField("Discord (if linked)", "<@" +discordId +">");
                 listener.getSlashCommandInteraction().createImmediateResponder().addEmbed(embed).respond();
+            }
+            case "search" -> {
+                String name= listener.getSlashCommandInteraction().getOptionByName("name").flatMap(SlashCommandInteractionOption::getStringValue).orElse("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa");
+                StringBuilder list = new StringBuilder();
+                Pattern pattern = Pattern.compile(".?" +name + ".?", Pattern.CASE_INSENSITIVE);
+                list.append("```Results:\n\n");
+                MongoCursor<Document> cursor =  playerCollection.find(Filters.regex("name", pattern)).limit(10).iterator();
+                try {
+                    while(cursor.hasNext()) {
+                        Document csr = cursor.next();
+                        list.append(csr.get("name")).append("; ID: ").append(csr.get("id")).append("\n");
+                    }
+                } finally {
+                    cursor.close();
+                }
+                list.append("```");
+                listener.getSlashCommandInteraction().createImmediateResponder().setContent(String.valueOf(list)).respond();
             }
           }
         }

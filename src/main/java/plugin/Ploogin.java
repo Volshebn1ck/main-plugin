@@ -28,8 +28,7 @@ import static mindustry.Vars.mods;
 import static mindustry.Vars.player;
 import static plugin.ConfigJson.discordurl;
 import static plugin.commands.BanMenu.loadBanMenu;
-import static plugin.functions.MongoDB.MongoDbPlayerCreation;
-import static plugin.functions.MongoDB.MongoDbPlayerRankCheck;
+import static plugin.functions.MongoDB.*;
 import static plugin.functions.Other.kickIfBanned;
 import static plugin.functions.Other.welcomeMenu;
 import static plugin.utils.Checks.isConsole;
@@ -62,6 +61,7 @@ public class Ploogin extends Plugin implements ApplicationListener{
             Player plr = event.player;
             welcomeMenu(plr);
             MongoDbPlayerCreation(plr);
+            MongoDbPlayerNameCheck(plr);
             MongoDbPlayerRankCheck(plr.uuid());
         });
         Events.on(EventType.PlayerConnect.class, event -> {
