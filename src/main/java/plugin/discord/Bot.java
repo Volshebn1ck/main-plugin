@@ -28,7 +28,7 @@ import org.javacord.api.interaction.SlashCommandInteractionOption;
 import org.javacord.api.interaction.SlashCommandOption;
 import org.javacord.api.interaction.SlashCommandOptionType;
 import plugin.ConfigJson;
-import plugin.Ploogin;
+import plugin.Plugin;
 import useful.Bundle;
 
 import java.awt.*;
@@ -42,7 +42,7 @@ import java.util.regex.Pattern;
 import static arc.util.Strings.stripColors;
 import static mindustry.Vars.*;
 import static plugin.ConfigJson.discordurl;
-import static plugin.Ploogin.playerCollection;
+import static plugin.Plugin.plrCollection;
 import static plugin.discord.Embed.banEmbed;
 import static plugin.utils.Checks.isAdmin;
 import static plugin.utils.FindDocument.getDoc;
@@ -118,7 +118,7 @@ public class Bot {
                                         true
                                 )
                         )
-        ).setDefaultEnabledForPermissions(PermissionType.KICK_MEMBERS)
+        ).setDefaultEnabledForPermissions(PermissionType.MODERATE_MEMBERS)
                 .createGlobal(api).join();
         SlashCommand exitCommand = SlashCommand.with("exit", "exits the servar"
         ).setDefaultEnabledForPermissions(PermissionType.ADMINISTRATOR)
@@ -133,10 +133,10 @@ public class Bot {
                                         "name of the player",
                                         true
                                 ))
-                ).setDefaultEnabledForPermissions(PermissionType.KICK_MEMBERS)
+                ).setDefaultEnabledForPermissions(PermissionType.MODERATE_MEMBERS)
                 .createGlobal(api).join();
         SlashCommand gameoverCommand = SlashCommand.with("gameover", "Executes gameover event"
-        ).setDefaultEnabledForPermissions(PermissionType.KICK_MEMBERS)
+        ).setDefaultEnabledForPermissions(PermissionType.MODERATE_MEMBERS)
                 .createGlobal(api).join();
         SlashCommand loginCommand = SlashCommand.with("login", "Connects your discord and mindustry account!",
                 Collections.singletonList(
@@ -213,7 +213,7 @@ public class Bot {
                 Bson updates = Updates.combine(
                         Updates.set("lastBan", banTime)
                 );
-                Ploogin.playerCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
+                Plugin.plrCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
                 Bot.banchannel.sendMessage(banEmbed(user, reason, banTime, listener.getInteraction().getUser().getName()));
                 return;
             }
@@ -227,7 +227,7 @@ public class Bot {
                 StringBuilder list = new StringBuilder();
                 list.append("```Players online: ").append(Groups.player.size()).append("\n\n");
                 for (Player player : Groups.player){
-                    Document user = playerCollection.find(Filters.eq("uuid", player.uuid())).first();
+                    Document user = plrCollection.find(Filters.eq("uuid", player.uuid())).first();
                     int id = user.getInteger("id");
                     if (player.admin()){
                         list.append("# [A] " + player.plainName()).append("; ID: " + id).append("\n");
@@ -299,7 +299,7 @@ public class Bot {
                 StringBuilder list = new StringBuilder();
                 Pattern pattern = Pattern.compile(".?" +name + ".?", Pattern.CASE_INSENSITIVE);
                 list.append("```Results:\n\n");
-                MongoCursor<Document> cursor =  playerCollection.find(Filters.regex("name", pattern)).limit(10).iterator();
+                MongoCursor<Document> cursor =  plrCollection.find(Filters.regex("name", pattern)).limit(10).iterator();
                 try {
                     while(cursor.hasNext()) {
                         Document csr = cursor.next();

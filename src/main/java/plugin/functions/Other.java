@@ -10,7 +10,7 @@ import useful.Bundle;
 import java.util.Date;
 
 import static plugin.ConfigJson.discordurl;
-import static plugin.Ploogin.playerCollection;
+import static plugin.Plugin.plrCollection;
 
 public class Other {
 
@@ -29,7 +29,7 @@ public class Other {
         Call.menu(player.con, MenuHandler.welcomeMenu, title, description, new String[][]{{button1}, {button2}});
     }
     public static void kickIfBanned(Player player){
-        Document user = playerCollection.find(Filters.eq("uuid", player.uuid())).first();
+        Document user = plrCollection.find(Filters.eq("uuid", player.uuid())).first();
         if (user == null){
             return;
         }

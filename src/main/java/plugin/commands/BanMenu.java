@@ -15,9 +15,9 @@ import mindustry.net.Administration.TraceInfo;
 import mindustry.net.Packets.KickReason;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import plugin.Ploogin;
 import plugin.discord.Bot;
 import useful.Action;
+import plugin.Plugin;
 import useful.Action2;
 import useful.Bundle;
 import useful.State.StateKey;
@@ -117,7 +117,7 @@ public class BanMenu {
             input.result((view, text) -> {
                 var target = view.state.get(TARGET);
                 long duration = view.state.get(DURATION);
-                Document user = Ploogin.playerCollection.find(Filters.eq("uuid", target.uuid())).first();
+                Document user = Plugin.plrCollection.find(Filters.eq("uuid", target.uuid())).first();
                 Date date = new Date();
                 long banTime = date.getTime() + TimeUnit.DAYS.toMillis(duration);
                 String timeUntilUnban = Bundle.formatDuration(Duration.ofDays(duration));
@@ -126,7 +126,7 @@ public class BanMenu {
                 Bson updates = Updates.combine(
                         Updates.set("lastBan", banTime)
                 );
-                Ploogin.playerCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
+                Plugin.plrCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
                 Bot.banchannel.sendMessage(banEmbed(user,text,banTime, view.player.plainName()));
             });
         });

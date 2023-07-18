@@ -9,7 +9,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 
-import static plugin.Ploogin.playerCollection;
+import static plugin.Plugin.plrCollection;
 import static plugin.utils.FindDocument.getDoc;
 
 public class MongoDB {
@@ -18,23 +18,23 @@ public class MongoDB {
         long discordid = 0;
         var id = new ObjectId();
         Document plrDoc = new Document("_id", id);
-        plrDoc.append("id", (int) playerCollection.countDocuments());
+        plrDoc.append("id", (int) plrCollection.countDocuments());
         plrDoc.append("uuid", eventPlayer.uuid());
         plrDoc.append("name", eventPlayer.plainName());
         plrDoc.append("rawName", eventPlayer.name());
         plrDoc.append("rank", 0);
         plrDoc.append("lastBan", lastBan);
         plrDoc.append("discordid", discordid);
-        Document chk = playerCollection.find(Filters.eq("uuid", eventPlayer.uuid())).first();
+        Document chk = plrCollection.find(Filters.eq("uuid", eventPlayer.uuid())).first();
         if (chk == null){
-            playerCollection.insertOne(plrDoc);
+            plrCollection.insertOne(plrDoc);
         } else {
             return;
         }
     }
     public static void MongoDbPlayerRankCheck(String uuid){
         Player eventPlayer = Groups.player.find(p -> p.uuid().contains(uuid));
-        Document user = playerCollection.find(Filters.eq("uuid", uuid)).first();
+        Document user = plrCollection.find(Filters.eq("uuid", uuid)).first();
         String tempName = user.getString("rawName");
         int rank = user.getInteger("rank");
         switch (rank){
@@ -59,7 +59,7 @@ public class MongoDB {
                     Updates.set("name", player.plainName()),
                     Updates.set("rawName", player.name())
             );
-            playerCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
+            plrCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
         }
     }
 }

@@ -8,7 +8,7 @@ import mindustry.ui.Menus;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.javacord.api.event.interaction.SlashCommandCreateEvent;
-import plugin.Ploogin;
+import plugin.Plugin;
 
 import static plugin.ConfigJson.discordurl;
 import static plugin.functions.MongoDB.MongoDbPlayerRankCheck;
@@ -16,7 +16,6 @@ import static plugin.utils.FindDocument.getDoc;
 
 
 public class MenuHandler {
-        public static Player plr = Ploogin.victim;
         public static int welcomeMenu = Menus.registerMenu(((player, option) -> {
             switch (option){
                 case -1 -> {
@@ -51,7 +50,7 @@ public class MenuHandler {
                                     Updates.set("discordid", discordId)
                             );
                         }
-                        Ploogin.playerCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
+                        Plugin.plrCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
                         player.sendMessage("[blue]Successfully connected your discord: " + listener.getInteraction().getUser().getName());
                         listener.getSlashCommandInteraction().createImmediateResponder().setContent("Successfully connected your mindustry account!").respond();
                         MongoDbPlayerRankCheck(user.getString("uuid"));
