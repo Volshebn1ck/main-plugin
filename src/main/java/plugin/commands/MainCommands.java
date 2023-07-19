@@ -15,15 +15,13 @@ import mindustry.maps.Map;
 import org.bson.Document;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static arc.util.Strings.canParseInt;
 import static mindustry.Vars.mods;
-import static mindustry.Vars.player;
 import static plugin.Plugin.plrCollection;
 import static plugin.utils.Checks.isConsole;
-import static plugin.utils.Utilities.voteCanceled;
-import static plugin.utils.Utilities.voteSuccess;
+import static plugin.utils.Utilities.*;
 
 public class MainCommands {
     public static AtomicInteger votes = new AtomicInteger(0);
@@ -66,6 +64,24 @@ public class MainCommands {
             } else {
                 player.sendMessage("[scarlet]You must be console to use this command.");
             }
+        });
+        handler.<Player>register("maps", "<page>","List all maps", (args, player) -> {
+            StringBuilder list = new StringBuilder();
+            if (!canParseInt(args[0])){
+                player.sendMessage("[red]Page must be number!");
+                return;
+            }
+            int mapsPerPage = 10;
+            int page = Integer.parseInt(args[0]);
+            Seq<Map> maps = getMaps();
+            maps.list().stream().skip(page*10L).limit(mapsPerPage + (page * 10L)).forEach(
+                    map -> list.append(map.name() + "[white], by " + map.author())
+            );
+            if (!String.valueOf(list).contains("by")){
+                player.sendMessage("[red]No maps detected!");
+                return;
+            }
+            player.sendMessage(String.valueOf(list));
         });
         handler.<Player>register("rtv", "<name...>", "Rock the vote to change map!", (args, player) -> {
             final int[] votesRequired = new int[1];

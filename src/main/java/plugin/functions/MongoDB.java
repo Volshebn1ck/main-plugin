@@ -9,6 +9,8 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 
+import java.util.Arrays;
+
 import static plugin.Plugin.plrCollection;
 import static plugin.utils.FindDocument.getDoc;
 
@@ -59,7 +61,13 @@ public class MongoDB {
                     Updates.set("name", player.plainName()),
                     Updates.set("rawName", player.name())
             );
-            plrCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
+            MongoDbUpdate(user, Updates.set("name", player.plainName()), Updates.set("rawName", player.name()));
         }
+    }
+    public static <T> void MongoDbUpdate(Document user, Bson... updates){
+        Bson update = Updates.combine(
+                updates
+        );
+        plrCollection.updateOne(user, update, new UpdateOptions().upsert(true));
     }
 }

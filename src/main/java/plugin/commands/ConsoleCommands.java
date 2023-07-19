@@ -16,6 +16,7 @@ import java.util.ArrayList;
 
 import static plugin.Plugin.plrCollection;
 import static plugin.functions.MongoDB.MongoDbPlayerRankCheck;
+import static plugin.functions.MongoDB.MongoDbUpdate;
 
 public class ConsoleCommands {
     public static void loadServerCommands(CommandHandler handler){
@@ -40,10 +41,7 @@ public class ConsoleCommands {
                 Log.warn("This user doesnt exist!");
                 return;
             }
-            Bson updates = Updates.combine(
-                    Updates.set("rank", rankid)
-            );
-            plrCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
+            MongoDbUpdate(user, Updates.set("rank", rankid));
             Log.info("Rank has been given!");
             Player player = Groups.player.find(p -> p.uuid().equals(user.getString("uuid")));
             if (player == null){

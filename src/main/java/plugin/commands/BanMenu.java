@@ -31,6 +31,7 @@ import static mindustry.Vars.logic;
 import static mindustry.Vars.net;
 import static plugin.ConfigJson.discordurl;
 import static plugin.discord.Embed.banEmbed;
+import static plugin.functions.MongoDB.MongoDbUpdate;
 
 public class BanMenu {
 
@@ -123,10 +124,7 @@ public class BanMenu {
                 String timeUntilUnban = Bundle.formatDuration(Duration.ofDays(duration));
                 target.con.kick("[red]You have been banned!\n\n" + "[white]Reason: " + text +"\nDuration: " + timeUntilUnban + " until unban\nIf you think this is a mistake, make sure to appeal ban in our discord: " + discordurl, 0);
                 Call.sendMessage(target.plainName() + " has been banned for: " + text);
-                Bson updates = Updates.combine(
-                        Updates.set("lastBan", banTime)
-                );
-                Plugin.plrCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
+                MongoDbUpdate(user, Updates.set("lastBan", banTime));
                 Bot.banchannel.sendMessage(banEmbed(user,text,banTime, view.player.plainName()));
             });
         });

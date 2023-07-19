@@ -44,6 +44,7 @@ import static mindustry.Vars.*;
 import static plugin.ConfigJson.discordurl;
 import static plugin.Plugin.plrCollection;
 import static plugin.discord.Embed.banEmbed;
+import static plugin.functions.MongoDB.MongoDbUpdate;
 import static plugin.utils.Checks.isAdmin;
 import static plugin.utils.FindDocument.getDoc;
 import static plugin.utils.MenuHandler.loginMenu;
@@ -96,7 +97,7 @@ public class Bot {
         }
     }
     // registers slash commands so user can see them and use
-    private static void registerSlashCommands(){
+    private static void registerSlashCommands() {
         SlashCommand banCommand = SlashCommand.with("ban", "Bans the player",
                         Arrays.asList(
                                 SlashCommandOption.create(
@@ -118,10 +119,10 @@ public class Bot {
                                         true
                                 )
                         )
-        ).setDefaultEnabledForPermissions(PermissionType.MODERATE_MEMBERS)
+                ).setDefaultEnabledForPermissions(PermissionType.MODERATE_MEMBERS)
                 .createGlobal(api).join();
         SlashCommand exitCommand = SlashCommand.with("exit", "exits the servar"
-        ).setDefaultEnabledForPermissions(PermissionType.ADMINISTRATOR)
+                ).setDefaultEnabledForPermissions(PermissionType.ADMINISTRATOR)
                 .createGlobal(api).join();
         SlashCommand listCommand = SlashCommand.with("list", "Lists the players"
         ).createGlobal(api).join();
@@ -136,7 +137,7 @@ public class Bot {
                 ).setDefaultEnabledForPermissions(PermissionType.MODERATE_MEMBERS)
                 .createGlobal(api).join();
         SlashCommand gameoverCommand = SlashCommand.with("gameover", "Executes gameover event"
-        ).setDefaultEnabledForPermissions(PermissionType.MODERATE_MEMBERS)
+                ).setDefaultEnabledForPermissions(PermissionType.MODERATE_MEMBERS)
                 .createGlobal(api).join();
         SlashCommand loginCommand = SlashCommand.with("login", "Connects your discord and mindustry account!",
                 Collections.singletonList(
@@ -146,7 +147,7 @@ public class Bot {
                                 "id",
                                 true
                         ))
-                ).createGlobal(api).join();
+        ).createGlobal(api).join();
         SlashCommand getInfoCommand = SlashCommand.with("stats", "Gets stats of player",
                 Arrays.asList(
                         SlashCommandOption.create(
@@ -169,6 +170,18 @@ public class Bot {
                                 true
                         ))
         ).createGlobal(api).join();
+
+        SlashCommand unbanCommand = SlashCommand.with("unban", "Unbans the player",
+                        Collections.singletonList(
+                                SlashCommandOption.create(
+                                        SlashCommandOptionType.LONG,
+                                        "id",
+                                        "id of the player",
+                                        true
+                                )
+                        )
+                ).setDefaultEnabledForPermissions(PermissionType.MODERATE_MEMBERS)
+                .createGlobal(api).join();
     }
     // calling slash command functions once they got used
     private static void addSlashCommandListener(SlashCommandCreateEvent listener) {
@@ -196,10 +209,6 @@ public class Bot {
                     return;
                 }
                 Player plr = Groups.player.find(p -> p.uuid().equals(user.getString("uuid")));
-                if (isAdmin(id)) {
-                    listener.getSlashCommandInteraction().createImmediateResponder().setContent("You cant ban an admin!").respond();
-                    return;
-                }
                 if (plr == null) {
                     Log.info("Player is offline, not kicking him");
                 } else {
@@ -210,10 +219,7 @@ public class Bot {
                         .respond();
 
                 Call.sendMessage(user.getString("name") + " has been banned for: " + reason);
-                Bson updates = Updates.combine(
-                        Updates.set("lastBan", banTime)
-                );
-                Plugin.plrCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
+                MongoDbUpdate(user, Updates.set("lastBan", banTime));
                 Bot.banchannel.sendMessage(banEmbed(user, reason, banTime, listener.getInteraction().getUser().getName()));
                 return;
             }
@@ -266,7 +272,7 @@ public class Bot {
                 }
                 Player player = Groups.player.find(p -> p.uuid().equals(user.getString("uuid")));
                 if (player == null){
-                    listener.getSlashCommandInteraction().createImmediateResponder().setContent("This player doesnt exists or offline!").respond();
+                    listener.getSlashCommandInteraction().createImmediateResponder().setContent("This player is offline!").respond();
                     return;
                 }
                 loginMenuFunction(listener);
@@ -310,6 +316,20 @@ public class Bot {
                 }
                 list.append("```");
                 listener.getSlashCommandInteraction().createImmediateResponder().setContent(String.valueOf(list)).respond();
+            }
+            case "unban" -> {
+                int id = Math.toIntExact(listener.getSlashCommandInteraction().getOptionByName("id").get().getLongValue().get());
+                Document user = getDoc(id);
+                if (user == null){
+                    listener.getSlashCommandInteraction().createImmediateResponder().setContent("Could not find that player!").respond();
+                    return;
+                }
+                if (user.getLong("lastBan") == 0L){
+                    listener.getSlashCommandInteraction().createImmediateResponder().setContent("User is not banned!").respond();
+                    return;
+                }
+                MongoDbUpdate(user, Updates.set("lastBan", 0L));
+                listener.getSlashCommandInteraction().createImmediateResponder().setContent(user.getString("name") + " has been unbanned!").respond();
             }
           }
         }

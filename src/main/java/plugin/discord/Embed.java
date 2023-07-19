@@ -13,6 +13,7 @@ public class Embed {
         return new EmbedBuilder()
             .setTitle("Ban event")
             .setColor(Color.RED)
+            .addField("**ID**", String.valueOf(user.getInteger("id")))
             .addField("**Name**", stripColors(user.getString("name")))
             .addField("**Reason**", reason)
             .addField("**Expires**", "<t:" + banTime/1000 +":D>")

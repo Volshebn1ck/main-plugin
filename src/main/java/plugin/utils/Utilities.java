@@ -1,4 +1,5 @@
 package plugin.utils;
+import arc.struct.Seq;
 import mindustry.Vars;
 import mindustry.gen.Call;
 import mindustry.gen.Groups;
@@ -41,6 +42,13 @@ public class Utilities {
         reloader.end();
         votes.set(0);
         votedPlayer.clear();
+    }
+    public static Seq<Map> getMaps(){
+        Seq<Map> maps = new Seq<>();
+        for(Map map : Vars.maps.customMaps()){
+            maps.add(map);
+        }
+        return maps;
     }
 }
 
