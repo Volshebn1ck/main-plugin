@@ -64,7 +64,7 @@ public class MongoDB {
             MongoDbUpdate(user, Updates.set("name", player.plainName()), Updates.set("rawName", player.name()));
         }
     }
-    public static <T> void MongoDbUpdate(Document user, Bson... updates){
+    public static void MongoDbUpdate(Document user, Bson... updates){
         Bson update = Updates.combine(
                 updates
         );

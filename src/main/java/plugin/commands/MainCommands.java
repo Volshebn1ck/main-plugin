@@ -3,7 +3,6 @@ package plugin.commands;
 import arc.Events;
 import arc.struct.Seq;
 import arc.util.CommandHandler;
-import arc.util.Timer;
 import com.mongodb.client.model.Filters;
 import mindustry.Vars;
 import mindustry.game.EventType;
@@ -15,10 +14,13 @@ import mindustry.maps.Map;
 import org.bson.Document;
 
 import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static arc.util.Strings.canParseInt;
-import static mindustry.Vars.mods;
+import static mindustry.Vars.*;
+import static plugin.ConfigJson.discordurl;
 import static plugin.Plugin.plrCollection;
 import static plugin.utils.Checks.isConsole;
 import static plugin.utils.Utilities.*;
@@ -83,9 +85,10 @@ public class MainCommands {
             }
             player.sendMessage(String.valueOf(list));
         });
-        handler.<Player>register("rtv", "<name...>", "Rock the vote to change map!", (args, player) -> {
+        handler.<Player>register("rtv", "<map...>", "Rock the vote to change map!", (args, player) -> {
             final int[] votesRequired = new int[1];
             AtomicInteger time = new AtomicInteger(60);
+            votesRequired[0] = (int) Math.ceil((double) Groups.player.size()/2);
             Timer timer = new Timer();
             if (isVoting){
                 player.sendMessage("Vote is already running!");
@@ -96,22 +99,28 @@ public class MainCommands {
                 player.sendMessage("Could not find that map!");
                 return;
             }
-            Call.sendMessage(player.plainName() + " Started vote for map " + choosedMap.plainName() + votes.get() +"/"+ Groups.player.size());
+            Call.sendMessage(player.plainName() + " Started vote for map " + choosedMap.plainName() + " -> " + votes.get() +"/"+ votesRequired[0] + ", y/n to vote");
             isVoting = true;
-            timer.schedule(() -> {
+            timer.schedule((new TimerTask() {
+                @Override
+                public void run() {
                     time.getAndAdd(-1);
-                    votesRequired[0] = (int) Math.ceil((double) Groups.player.size()/2);
+                    votesRequired[0] = (int) Math.ceil((double) Groups.player.size() / 2);
                     if (votes.get() >= votesRequired[0]) {
                         voteSuccess(choosedMap);
                         isVoting = false;
-                        timer.clear();
+                        timer.cancel();
                     }
-                    if (time.get() < 0){
+                    if (time.get() < 0) {
                         voteCanceled();
                         isVoting = false;
-                        timer.clear();
+                        timer.cancel();
                     }
-            }, 0f, 1f, 60);
+                }
+            }), 0, 1000);
+        });
+        handler.<Player>register("discord", "Link to our discord!", (args,player) -> {
+            Call.openURI(player.con, discordurl);
         });
     }
 }

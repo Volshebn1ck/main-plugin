@@ -3,5 +3,7 @@
     "logchannelid": "channel where messages will be logged",
     "banlogchannelid": "channel where bans will be logged",
     "mongodburl": "Mongo Database URL connection",
-    "discordurl": "Discord invite code"
+    "discordurl": "Discord invite code",
+    "moderatorid": "Role ID of moderator",
+    "adminid": "Role ID of admin"
 }

@@ -1,11 +1,10 @@
 package plugin.discord;
 
-import arc.Core;
 import arc.Events;
 import arc.util.Log;
+import arc.util.Timer;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
 import mindustry.core.GameState;
 import mindustry.game.EventType;
@@ -14,7 +13,6 @@ import mindustry.gen.Call;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
 import org.bson.Document;
-import org.bson.conversions.Bson;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.channel.TextChannel;
@@ -28,7 +26,6 @@ import org.javacord.api.interaction.SlashCommandInteractionOption;
 import org.javacord.api.interaction.SlashCommandOption;
 import org.javacord.api.interaction.SlashCommandOptionType;
 import plugin.ConfigJson;
-import plugin.Plugin;
 import useful.Bundle;
 
 import java.awt.*;
@@ -40,17 +37,19 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import static arc.util.Strings.stripColors;
-import static mindustry.Vars.*;
+import static mindustry.Vars.netServer;
+import static mindustry.Vars.state;
 import static plugin.ConfigJson.discordurl;
 import static plugin.Plugin.plrCollection;
+import static plugin.discord.DiscordFunctions.isModerator;
 import static plugin.discord.Embed.banEmbed;
 import static plugin.functions.MongoDB.MongoDbUpdate;
-import static plugin.utils.Checks.isAdmin;
 import static plugin.utils.FindDocument.getDoc;
 import static plugin.utils.MenuHandler.loginMenu;
 import static plugin.utils.MenuHandler.loginMenuFunction;
-import static plugin.utils.Utilities.*;
-
+import static plugin.utils.Utilities.findPlayerByName;
+import static plugin.utils.Utilities.notNullElse;
+@SuppressWarnings("unused")
 public class Bot {
     // variables for load function
     public static DiscordApi api;
@@ -79,14 +78,16 @@ public class Bot {
             }
             channel.sendMessage("`" + event.player.plainName() + ": " + event.message + "`");
         });
-        Events.on(EventType.PlayerJoin.class, event -> {
+        Events.on(EventType.PlayerJoin.class, event ->
+                Timer.schedule(() -> {
             Document user = getDoc(event.player.uuid());
-            channel.sendMessage("`" + event.player.plainName() + " joined the server!" + "`");
-        });
-        Events.on(EventType.PlayerLeave.class, event -> {
+            channel.sendMessage("`" + event.player.plainName() + " ("+ user.getInteger("id") + ")" + " joined the server!" + "`");
+        }, 0.2f));
+        Events.on(EventType.PlayerLeave.class, event ->
+                Timer.schedule(() -> {
             Document user = getDoc(event.player.uuid());
-            channel.sendMessage("`" + event.player.plainName()  + " left the server!" + "`");
-        });
+            channel.sendMessage("`" + event.player.plainName()  + " ("+ user.getInteger("id") + ")" +" left the server!" + "`");
+        }, 0.2f));
     }
      // creating listener once message is created
     private static void onMessageCreate(MessageCreateEvent listener){
@@ -119,11 +120,7 @@ public class Bot {
                                         true
                                 )
                         )
-                ).setDefaultEnabledForPermissions(PermissionType.MODERATE_MEMBERS)
-                .createGlobal(api).join();
-        SlashCommand exitCommand = SlashCommand.with("exit", "exits the servar"
-                ).setDefaultEnabledForPermissions(PermissionType.ADMINISTRATOR)
-                .createGlobal(api).join();
+                ).createGlobal(api).join();
         SlashCommand listCommand = SlashCommand.with("list", "Lists the players"
         ).createGlobal(api).join();
         SlashCommand adminaddCommand = SlashCommand.with("adminadd", "gives admin to player (use it carefully)",
@@ -134,11 +131,9 @@ public class Bot {
                                         "name of the player",
                                         true
                                 ))
-                ).setDefaultEnabledForPermissions(PermissionType.MODERATE_MEMBERS)
-                .createGlobal(api).join();
+                ).createGlobal(api).join();
         SlashCommand gameoverCommand = SlashCommand.with("gameover", "Executes gameover event"
-                ).setDefaultEnabledForPermissions(PermissionType.MODERATE_MEMBERS)
-                .createGlobal(api).join();
+                ).createGlobal(api).join();
         SlashCommand loginCommand = SlashCommand.with("login", "Connects your discord and mindustry account!",
                 Collections.singletonList(
                         SlashCommandOption.create(
@@ -180,8 +175,7 @@ public class Bot {
                                         true
                                 )
                         )
-                ).setDefaultEnabledForPermissions(PermissionType.MODERATE_MEMBERS)
-                .createGlobal(api).join();
+                ).createGlobal(api).join();
     }
     // calling slash command functions once they got used
     private static void addSlashCommandListener(SlashCommandCreateEvent listener) {
@@ -189,8 +183,14 @@ public class Bot {
             listener.getSlashCommandInteraction().createImmediateResponder().setContent("Server is not running.").respond();
             return;
         }
+        if(listener.getSlashCommandInteraction().getServer().isEmpty()){
+            listener.getSlashCommandInteraction().createImmediateResponder().setContent("Cant use commands in DM").respond();
+        }
         switch(listener.getSlashCommandInteraction().getCommandName()){
             case "ban" -> {
+                if (!isModerator(listener)){
+                    return;
+                }
 
                 String response;
 
@@ -221,13 +221,6 @@ public class Bot {
                 Call.sendMessage(user.getString("name") + " has been banned for: " + reason);
                 MongoDbUpdate(user, Updates.set("lastBan", banTime));
                 Bot.banchannel.sendMessage(banEmbed(user, reason, banTime, listener.getInteraction().getUser().getName()));
-                return;
-            }
-            case "exit" -> {
-                 Log.info("Stopping server");
-                 api.disconnect();
-                 net.dispose();
-                 Core.app.exit();
             }
             case "list" -> {
                 StringBuilder list = new StringBuilder();
@@ -236,18 +229,20 @@ public class Bot {
                     Document user = plrCollection.find(Filters.eq("uuid", player.uuid())).first();
                     int id = user.getInteger("id");
                     if (player.admin()){
-                        list.append("# [A] " + player.plainName()).append("; ID: " + id).append("\n");
+                        list.append("# [A] ").append(player.plainName()).append("; ID: ").append(id).append("\n");
                     } else {
-                        list.append("# " + player.plainName()).append("; ID: " + id).append("\n");
+                        list.append("# ").append(player.plainName()).append("; ID: ").append(id).append("\n");
                     }
                 }
                 list.append("```");
                 listener.getSlashCommandInteraction()
                         .createImmediateResponder().setContent(String.valueOf(list))
                         .respond();
-                return;
             }
             case "adminadd" -> {
+                if (!isModerator(listener)){
+                    return;
+                }
                 String name = listener.getSlashCommandInteraction().getOptionByName("name").get().getStringValue().get();
                 Player player = findPlayerByName(name);
                 if (player == null){
@@ -256,12 +251,15 @@ public class Bot {
                 if (player.admin()){
                     listener.getSlashCommandInteraction().createImmediateResponder().setContent("Player is already admin!").respond(); return;
                 }
-                netServer.admins.adminPlayer(String.valueOf(player.id()), player.usid());
-                listener.getSlashCommandInteraction().createImmediateResponder().setContent("Successfully admin " + player.plainName()).respond(); return;
+                netServer.admins.adminPlayer(String.valueOf(player.uuid()), player.usid());
+                listener.getSlashCommandInteraction().createImmediateResponder().setContent("Successfully admin " + player.plainName()).respond();
             }
             case "gameover" -> {
+                if (!isModerator(listener)){
+                    return;
+                }
                 Events.fire(new EventType.GameOverEvent(Team.derelict));
-                listener.getSlashCommandInteraction().createImmediateResponder().setContent("Gameover executed!").respond(); return;
+                listener.getSlashCommandInteraction().createImmediateResponder().setContent("Gameover executed!").respond();
             }
             case "login" -> {
                 int id = Math.toIntExact(listener.getSlashCommandInteraction().getOptionByName("id").get().getLongValue().get());
@@ -305,19 +303,19 @@ public class Bot {
                 StringBuilder list = new StringBuilder();
                 Pattern pattern = Pattern.compile(".?" +name + ".?", Pattern.CASE_INSENSITIVE);
                 list.append("```Results:\n\n");
-                MongoCursor<Document> cursor =  plrCollection.find(Filters.regex("name", pattern)).limit(10).iterator();
-                try {
-                    while(cursor.hasNext()) {
+                try (MongoCursor<Document> cursor = plrCollection.find(Filters.regex("name", pattern)).limit(10).iterator()) {
+                    while (cursor.hasNext()) {
                         Document csr = cursor.next();
                         list.append(csr.get("name")).append("; ID: ").append(csr.get("id")).append("\n");
                     }
-                } finally {
-                    cursor.close();
                 }
                 list.append("```");
                 listener.getSlashCommandInteraction().createImmediateResponder().setContent(String.valueOf(list)).respond();
             }
             case "unban" -> {
+                if (!isModerator(listener)){
+                    return;
+                }
                 int id = Math.toIntExact(listener.getSlashCommandInteraction().getOptionByName("id").get().getLongValue().get());
                 Document user = getDoc(id);
                 if (user == null){
