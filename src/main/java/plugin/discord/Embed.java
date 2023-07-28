@@ -25,6 +25,6 @@ public class Embed {
         return new EmbedBuilder()
                 .setTitle("Not enough permissions!")
                 .setColor(Color.RED)
-                .setDescription("You should have <@" + role.get().getId() + "> Role to interact with this command/button!");
+                .setDescription("You should have <@&" + role.get().getId() + "> Role to interact with this command/button!");
     }
 }
