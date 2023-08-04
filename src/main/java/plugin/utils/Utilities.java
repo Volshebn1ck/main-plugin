@@ -1,11 +1,17 @@
 package plugin.utils;
+import arc.Core;
+import arc.Events;
 import arc.struct.Seq;
+import arc.util.Reflect;
 import mindustry.Vars;
+import mindustry.game.EventType;
+import mindustry.game.Team;
 import mindustry.gen.Call;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
 import mindustry.maps.Map;
 import mindustry.net.WorldReloader;
+import mindustry.server.ServerControl;
 import org.bson.Document;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,12 +40,8 @@ public class Utilities {
     }
     public static void voteSuccess(Map map){
         Call.sendMessage("[green]Vote success! Changing map!");
-        var reloader = new WorldReloader();
-        reloader.begin();
-        Vars.world.loadMap(map);
-        Vars.state.rules = Vars.state.map.applyRules(Vars.state.rules.mode());
-        logic.play();
-        reloader.end();
+        Reflect.set(ServerControl.instance, "nextMapOverride", map);
+        Events.fire(new EventType.GameOverEvent(Team.derelict));
         votes.set(0);
         votedPlayer.clear();
     }

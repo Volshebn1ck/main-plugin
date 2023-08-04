@@ -21,6 +21,7 @@ import plugin.Plugin;
 import useful.Action2;
 import useful.Bundle;
 import useful.State.StateKey;
+import useful.menu.Menu;
 import useful.text.TextInput;
 
 import java.time.Duration;

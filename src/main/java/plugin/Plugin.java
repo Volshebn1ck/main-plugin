@@ -53,6 +53,7 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener{
             MongoDbPlayerNameCheck(plr);
             MongoDbPlayerRankCheck(plr.uuid());
         });
+        MongoDbPlaytimeTimer();
         Events.on(EventType.PlayerConnect.class, event -> kickIfBanned(event.player));
         Events.on(EventType.PlayerChatEvent.class, event ->{
             if (isVoting){

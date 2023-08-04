@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import static plugin.Plugin.plrCollection;
 import static plugin.functions.MongoDB.MongoDbPlayerRankCheck;
 import static plugin.functions.MongoDB.MongoDbUpdate;
+import static plugin.utils.FindDocument.getDoc;
 
 public class ConsoleCommands {
     public static void loadServerCommands(CommandHandler handler){
@@ -38,8 +39,11 @@ public class ConsoleCommands {
             int rankid = Integer.parseInt(args[1]);
             Document user = plrCollection.find(Filters.eq("id", id)).first();
             if (user == null){
-                Log.warn("This user doesnt exist!");
+                Log.warn("No such player!");
                 return;
+            }
+            if (rankid > 4){
+                Log.warn("This rank doesnt exist!");
             }
             MongoDbUpdate(user, Updates.set("rank", rankid));
             Log.info("Rank has been given!");

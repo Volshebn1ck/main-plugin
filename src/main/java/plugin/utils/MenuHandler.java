@@ -18,10 +18,7 @@ import static plugin.utils.FindDocument.getDoc;
 public class MenuHandler {
         public static int welcomeMenu = Menus.registerMenu(((player, option) -> {
             switch (option){
-                case -1 -> {
-                    return;
-                }
-                case 0 -> {
+                case -1, 0 -> {
                     return;
                 }
                 case 1 -> {
@@ -29,6 +26,13 @@ public class MenuHandler {
                 }
             }
         }));
+    public static int statsMenu = Menus.registerMenu(((player, option) -> {
+        switch (option){
+            case -1, 0 -> {
+                return;
+            }
+        }
+    }));
         public static int loginMenu;
         public static void loginMenuFunction(SlashCommandCreateEvent listener){
             loginMenu = Menus.registerMenu(((player, option) -> {

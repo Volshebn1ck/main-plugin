@@ -22,6 +22,7 @@ import static arc.util.Strings.canParseInt;
 import static mindustry.Vars.*;
 import static plugin.ConfigJson.discordurl;
 import static plugin.Plugin.plrCollection;
+import static plugin.functions.Other.statsMenu;
 import static plugin.utils.Checks.isConsole;
 import static plugin.utils.Utilities.*;
 
@@ -121,6 +122,18 @@ public class MainCommands {
         });
         handler.<Player>register("discord", "Link to our discord!", (args,player) -> {
             Call.openURI(player.con, discordurl);
+        });
+        handler.<Player>register("stats", "[player...]", "Get stats of player or yourself", (args, player) -> {
+            if (args.length == 0){
+                statsMenu(player, player);
+                return;
+            }
+            Player plr = findPlayerByName(args[0]);
+            if (plr == null){
+                player.sendMessage("Could not find that player!");
+                return;
+            }
+            statsMenu(player, plr);
         });
     }
 }

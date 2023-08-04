@@ -1,5 +1,6 @@
 package plugin.functions;
 
+import arc.util.Timer;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
@@ -27,6 +28,7 @@ public class MongoDB {
         plrDoc.append("rank", 0);
         plrDoc.append("lastBan", lastBan);
         plrDoc.append("discordid", discordid);
+        plrDoc.append("playtime", 0);
         Document chk = plrCollection.find(Filters.eq("uuid", eventPlayer.uuid())).first();
         if (chk == null){
             plrCollection.insertOne(plrDoc);
@@ -52,6 +54,9 @@ public class MongoDB {
             case 3 ->{
                 eventPlayer.name = "[purple]<C> [orange]" + tempName;
             }
+            case 4 -> {
+                eventPlayer.name = "[cyan]<O> [orange]" + tempName;
+            }
         }
     }
     public static void MongoDbPlayerNameCheck(Player player){
@@ -69,5 +74,14 @@ public class MongoDB {
                 updates
         );
         plrCollection.updateOne(user, update, new UpdateOptions().upsert(true));
+    }
+    public static void MongoDbPlaytimeTimer(){
+        Timer.schedule(() -> {
+            for (Player player : Groups.player){
+                Document user = getDoc(player.uuid());
+                int playtime = (int) user.getOrDefault("playtime", 0) + 1;
+                MongoDbUpdate(user, Updates.set("playtime", playtime));
+            }
+        }, 0, 60);
     }
 }

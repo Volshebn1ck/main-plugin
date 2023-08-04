@@ -1,7 +1,9 @@
 package plugin.discord;
 
+import arc.Core;
 import arc.Events;
 import arc.util.Log;
+import arc.util.Time;
 import arc.util.Timer;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
@@ -18,7 +20,6 @@ import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.intent.Intent;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
-import org.javacord.api.entity.permission.PermissionType;
 import org.javacord.api.event.interaction.SlashCommandCreateEvent;
 import org.javacord.api.event.message.MessageCreateEvent;
 import org.javacord.api.interaction.SlashCommand;
@@ -37,10 +38,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import static arc.util.Strings.stripColors;
-import static mindustry.Vars.netServer;
-import static mindustry.Vars.state;
+import static mindustry.Vars.*;
 import static plugin.ConfigJson.discordurl;
 import static plugin.Plugin.plrCollection;
+import static plugin.discord.DiscordFunctions.isAdmin;
 import static plugin.discord.DiscordFunctions.isModerator;
 import static plugin.discord.Embed.banEmbed;
 import static plugin.functions.MongoDB.MongoDbUpdate;
@@ -120,7 +121,7 @@ public class Bot {
                                         true
                                 )
                         )
-                ).createGlobal(api).join();
+        ).createGlobal(api).join();
         SlashCommand listCommand = SlashCommand.with("list", "Lists the players"
         ).createGlobal(api).join();
         SlashCommand adminaddCommand = SlashCommand.with("adminadd", "gives admin to player (use it carefully)",
@@ -131,9 +132,9 @@ public class Bot {
                                         "name of the player",
                                         true
                                 ))
-                ).createGlobal(api).join();
+        ).createGlobal(api).join();
         SlashCommand gameoverCommand = SlashCommand.with("gameover", "Executes gameover event"
-                ).createGlobal(api).join();
+        ).createGlobal(api).join();
         SlashCommand loginCommand = SlashCommand.with("login", "Connects your discord and mindustry account!",
                 Collections.singletonList(
                         SlashCommandOption.create(
@@ -175,7 +176,16 @@ public class Bot {
                                         true
                                 )
                         )
-                ).createGlobal(api).join();
+        ).createGlobal(api).join();
+        SlashCommand cmdCommand = SlashCommand.with("js", "Execute js command",
+                Collections.singletonList(
+                        SlashCommandOption.create(
+                                SlashCommandOptionType.STRING,
+                                "cmd",
+                                "The command you want to execute",
+                                true
+                        ))
+        ).createGlobal(api).join();
     }
     // calling slash command functions once they got used
     private static void addSlashCommandListener(SlashCommandCreateEvent listener) {
@@ -328,6 +338,16 @@ public class Bot {
                 }
                 MongoDbUpdate(user, Updates.set("lastBan", 0L));
                 listener.getSlashCommandInteraction().createImmediateResponder().setContent(user.getString("name") + " has been unbanned!").respond();
+            }
+            case "js" -> {
+                if (!isAdmin(listener)){
+                    return;
+                }
+                String cmd = listener.getSlashCommandInteraction().getOptionByName("cmd").get().getStringValue().get();
+                Core.app.post(() -> {
+                    String output = mods.getScripts().runConsole(cmd);
+                    listener.getSlashCommandInteraction().createImmediateResponder().setContent(output).respond();
+                });
             }
           }
         }
