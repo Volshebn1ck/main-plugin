@@ -19,6 +19,7 @@ public class ConfigJson {
     public static String discordurl;
     public static String moderatorid;
     public static String adminid;
+    public static String prefix;
     // reads variables from config.json
     public static void read() throws IOException, ParseException {
         try {
@@ -31,6 +32,7 @@ public class ConfigJson {
             discordurl = (String) object.get("discordurl");
             moderatorid = (String) object.get("moderatorid");
             adminid= (String) object.get("adminid");
+            prefix = (String) object.get("prefix");
         }catch(Exception e){
             Log.err("Skill issue: " + e);
         }

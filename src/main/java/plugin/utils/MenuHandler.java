@@ -8,6 +8,7 @@ import mindustry.ui.Menus;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.javacord.api.event.interaction.SlashCommandCreateEvent;
+import org.javacord.api.event.message.MessageCreateEvent;
 import plugin.Plugin;
 
 import static plugin.ConfigJson.discordurl;
@@ -34,14 +35,14 @@ public class MenuHandler {
         }
     }));
         public static int loginMenu;
-        public static void loginMenuFunction(SlashCommandCreateEvent listener){
+        public static void loginMenuFunction(MessageCreateEvent listener){
             loginMenu = Menus.registerMenu(((player, option) -> {
                 switch (option){
                     case -1 -> {
                         return;
                     }
                     case 0 -> {
-                        long discordId = listener.getInteraction().getUser().getId();
+                        long discordId = listener.getMessageAuthor().getId();
                         Document user = getDoc(player.uuid());
                         Bson updates;
                         if (user.getInteger("rank") == 0){
@@ -55,8 +56,8 @@ public class MenuHandler {
                             );
                         }
                         Plugin.plrCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
-                        player.sendMessage("[blue]Successfully connected your discord: " + listener.getInteraction().getUser().getName());
-                        listener.getSlashCommandInteraction().createImmediateResponder().setContent("Successfully connected your mindustry account!").respond();
+                        player.sendMessage("[blue]Successfully connected your discord: " + listener.getMessageAuthor().getName());
+                        listener.getChannel().sendMessage("Successfully connected your mindustry account!");
                         MongoDbPlayerRankCheck(user.getString("uuid"));
                     }
                     case 1 -> {

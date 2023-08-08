@@ -1,6 +1,7 @@
 package plugin.functions;
 
 import arc.Core;
+import arc.struct.Seq;
 import com.mongodb.client.model.Filters;
 import mindustry.gen.Call;
 import mindustry.gen.Player;
@@ -8,7 +9,9 @@ import org.bson.Document;
 import plugin.utils.MenuHandler;
 import useful.Bundle;
 
+import java.lang.reflect.Array;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -48,31 +51,26 @@ public class Other {
     }
     public static void statsMenu(Player player, Player reqPlayer){
         Document user = getDoc(reqPlayer.uuid());
-        String rank = playerRank;
-        switch (user.getInteger("rank")){
-            case 0 -> {
-                rank = playerRank;
-            }
-            case 1 -> {
-                rank = trustedRank;
-            }
-            case 2 -> {
-                rank = adminRank;
-            }
-            case 3 -> {
-                rank = consoleRank;
-            }
-            case 4 -> {
-                rank = ownerRank;
-            }
-        }
+        String rank = rankName(user.getInteger("rank"));
         String title = "\uE86B Stats";
-        long playtime = Long.parseLong((String) user.getOrDefault("playtime", 0));
+        long playtime = Long.parseLong(String.valueOf(user.getInteger("playtime")));
         String description  = "[orange]Name: " + reqPlayer.name()
         + "\n[orange]ID: [white]" + user.getInteger("id")
         + "\n[orange]Rank: " + rank
         + "\n\n[orange]Playtime: [white]" + Bundle.formatDuration(Duration.ofMinutes(playtime));
         String button = "[red]Close";
         Call.menu(player.con, MenuHandler.statsMenu, title, description, new String[][]{{button}});
+    }
+    public static  String readValueFromArraySeparated(String[] array, int startPoint, int endPoint){
+        String[] newArray = Arrays.copyOfRange(array, startPoint, endPoint);
+        StringBuilder ha = new StringBuilder();
+        for (String element : newArray){
+            ha.append(element).append(" ");
+        }
+        String a = String.valueOf(ha);
+        return a.substring(0, a.length()-1);
+    }
+    public static <T> boolean inBounds(T[] array, int index){
+        return (index >= 0) && (index < array.length);
     }
 }

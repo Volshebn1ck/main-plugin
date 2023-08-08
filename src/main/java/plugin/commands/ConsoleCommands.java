@@ -14,10 +14,13 @@ import plugin.discord.Bot;
 
 import java.util.ArrayList;
 
+import static arc.util.Strings.canParseInt;
+import static arc.util.Strings.parseInt;
 import static plugin.Plugin.plrCollection;
 import static plugin.functions.MongoDB.MongoDbPlayerRankCheck;
 import static plugin.functions.MongoDB.MongoDbUpdate;
 import static plugin.utils.FindDocument.getDoc;
+import static plugin.utils.FindDocument.getDocAnyway;
 
 public class ConsoleCommands {
     public static void loadServerCommands(CommandHandler handler){
@@ -29,15 +32,12 @@ public class ConsoleCommands {
             }, 1f);
         });
         handler.register("setrank", "<id> <rank>", "Sets rank to player", (args, params) -> {
-            int id = 0;
-            try {
-                id = Integer.parseInt(args[0]);
-            } catch (NumberFormatException e){
-                Log.warn("Please, type an ID");
+            Document user = getDocAnyway(args[0]);
+            if (!canParseInt(args[1])){
+                Log.warn("Type a number!");
                 return;
             }
-            int rankid = Integer.parseInt(args[1]);
-            Document user = plrCollection.find(Filters.eq("id", id)).first();
+            int rankid = parseInt(args[1]);
             if (user == null){
                 Log.warn("No such player!");
                 return;

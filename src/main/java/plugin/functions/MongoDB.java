@@ -1,6 +1,8 @@
 package plugin.functions;
 
+import arc.util.Log;
 import arc.util.Timer;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
@@ -11,6 +13,7 @@ import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static plugin.Plugin.plrCollection;
 import static plugin.utils.FindDocument.getDoc;
@@ -83,5 +86,17 @@ public class MongoDB {
                 MongoDbUpdate(user, Updates.set("playtime", playtime));
             }
         }, 0, 60);
+    }
+    public static void MongoDbCheck(){
+        AtomicInteger totalUpdates = new AtomicInteger(0);
+        try (MongoCursor<Document> cursor = plrCollection.find().iterator()) {
+            while (cursor.hasNext()) {
+                Document csr = cursor.next();
+                int i = (int) csr.getOrDefault("playtime", 0);
+                MongoDbUpdate(csr, Updates.set("playtime", i));
+                totalUpdates.getAndAdd(1);
+            }
+        }
+        Log.info(totalUpdates + " Documents has been fetched/updated!");
     }
 }
