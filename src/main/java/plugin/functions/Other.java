@@ -1,25 +1,23 @@
 package plugin.functions;
 
-import arc.Core;
-import arc.struct.Seq;
 import com.mongodb.client.model.Filters;
 import mindustry.gen.Call;
 import mindustry.gen.Player;
+import mindustry.net.NetConnection;
+import mindustry.net.Packets;
 import org.bson.Document;
 import plugin.utils.MenuHandler;
 import useful.Bundle;
 
-import java.lang.reflect.Array;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.concurrent.atomic.AtomicReference;
 
-import static mindustry.Vars.mods;
 import static plugin.ConfigJson.discordurl;
 import static plugin.Plugin.plrCollection;
 import static plugin.etc.Ranks.*;
-import static plugin.utils.FindDocument.getDoc;
+import static plugin.utils.FindDocument.*;
+import static plugin.utils.Utilities.notNullElse;
 
 public class Other {
 
@@ -37,8 +35,8 @@ public class Other {
         String button2 = "[blue]\uE80D Join our discord!";
         Call.menu(player.con, MenuHandler.welcomeMenu, title, description, new String[][]{{button1}, {button2}});
     }
-    public static void kickIfBanned(Player player){
-        Document user = plrCollection.find(Filters.eq("uuid", player.uuid())).first();
+    public static void kickIfBanned(NetConnection player){
+        Document user = getDocByIP(player.address);
         if (user == null){
             return;
         }
@@ -46,7 +44,19 @@ public class Other {
         Date date = new Date();
         if (lastBan > date.getTime()) {
             String timeUntilUnban = Bundle.formatDuration(lastBan - date.getTime());
-            player.con.kick("[red]You have been banned!\n\n" +"[white]Duration: " + timeUntilUnban + " until unban\n\nIf you think this is a mistake, make sure to appeal ban in our discord: " + discordurl, 0);
+            player.kick("[red]You have been banned!\n\n" +"[white]Duration: " + timeUntilUnban + " until unban\n\nIf you think this is a mistake, make sure to appeal ban in our discord: " + discordurl, 0);
+        }
+    }
+    public static void kickIfBanned(Player player){
+        Document user = notNullElse(getDocAnyway(player.uuid()), getDocAnyway(player.ip()));
+        if (user == null){
+            return;
+        }
+        long lastBan = user.getLong("lastBan");
+        Date date = new Date();
+        if (lastBan > date.getTime()) {
+            String timeUntilUnban = Bundle.formatDuration(lastBan - date.getTime());
+            player.kick("[red]You have been banned!\n\n" +"[white]Duration: " + timeUntilUnban + " until unban\n\nIf you think this is a mistake, make sure to appeal ban in our discord: " + discordurl, 0);
         }
     }
     public static void statsMenu(Player player, Player reqPlayer){
@@ -57,6 +67,7 @@ public class Other {
         String description  = "[orange]Name: " + reqPlayer.name()
         + "\n[orange]ID: [white]" + user.getInteger("id")
         + "\n[orange]Rank: " + rank
+        + "\n[orange]Achievements: [white]"+ user.getList("achievements", String.class)
         + "\n\n[orange]Playtime: [white]" + Bundle.formatDuration(Duration.ofMinutes(playtime));
         String button = "[red]Close";
         Call.menu(player.con, MenuHandler.statsMenu, title, description, new String[][]{{button}});

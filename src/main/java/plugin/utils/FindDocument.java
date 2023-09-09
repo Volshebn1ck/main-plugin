@@ -23,12 +23,15 @@ public class FindDocument {
             return notNullElse(plrCollection.find(Filters.eq("uuid", uuidOrName)).first(), plrCollection.find(Filters.eq("name", uuidOrName)).first());
         }
     }
-    public static Document getDocAnyway(String uuidOrNameOrID){
-        if (canParseInt(uuidOrNameOrID)){
-            int i = parseInt(uuidOrNameOrID);
+    public static Document getDocByIP(String ip){
+        return plrCollection.find(eq("ip", ip)).first();
+    }
+    public static Document getDocAnyway(String uuidOrNameOrIDOrIp){
+        if (canParseInt(uuidOrNameOrIDOrIp)){
+            int i = parseInt(uuidOrNameOrIDOrIp);
             return plrCollection.find(Filters.eq("id", i)).first();
         } else {
-            return getDoc(uuidOrNameOrID);
+            return notNullElse(getDoc(uuidOrNameOrIDOrIp), getDocByIP(uuidOrNameOrIDOrIp));
         }
     };
 }

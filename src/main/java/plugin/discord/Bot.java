@@ -31,6 +31,7 @@ import useful.Bundle;
 
 import java.awt.*;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -127,8 +128,10 @@ public class Bot {
                         prefix + "adminadd <playerName...> -> gives admin to player\n" +
                         prefix + "login <playerIdOrName...> -> connects discord account and mindustry account\n" +
                         prefix + "search <playerName...> -> search players using their name\n" +
-                        prefix + "setrank <playerIdOrName> <rankid> -> set rank to player" +
-                        prefix + "ranks -> get all ranks on server" +
+                        prefix + "setrank <playerIdOrName> <rankid> -> set rank to player\n" +
+                        prefix + "ranks -> get all ranks on server\n" +
+                        prefix + "giveach <achievementName> <playerNameOrID...> -> Gives special achievement to player\n" +
+                        prefix + "removeach <achievementName> <playerNameOrID...> -> Removes special achievement from player" +
                         "```";
                 listener.getChannel().sendMessage(response);
             }
@@ -170,6 +173,7 @@ public class Bot {
                         .addField("Name", stripColors(user.getString("name")))
                         .addField("ID", String.valueOf(user.getInteger("id")))
                         .addField("Rank", stripColors(rankName(user.getInteger("rank"))))
+                        .addField("Achievements", user.getList("achievements", String.class).toString())
                         .addField("Playtime",  Bundle.formatDuration(Duration.ofMinutes(playtime)));
                         if (discordId != "none"){
                             embed.addField("Discord", "<@" +discordId +">");
@@ -350,6 +354,45 @@ public class Bot {
                     String output = mods.getScripts().runConsole(cmd);
                     listener.getChannel().sendMessage(output);
                 });
+            }
+            case "exit" -> {
+                if (!isAdmin(listener)){
+                    return;
+                }
+                api.disconnect();
+                Timer.schedule(()-> {
+                    System.exit(0);
+                }, 1f);
+            }
+            case "giveach" -> {
+                if (!isAdmin(listener)){
+                    return;
+                }
+                if (!inBounds(listener.getMessageContent().split(" "), 2)){
+                    listener.getChannel().sendMessage("Not enough arguments!"); return;
+                }
+                String achName = listener.getMessageContent().split(" ")[1];
+                String id = readValueFromArraySeparated(listener.getMessageContent().split(" "), 2, listener.getMessageContent().split(" ").length);
+                Document user = getDocAnyway(id);
+                java.util.List<String> yes = user.getList("achievements", String.class);
+                java.util.List<String> newArray = new ArrayList<>(yes);
+                newArray.add(achName);
+                MongoDbUpdate(user, Updates.set("achievements", newArray));
+            }
+            case "removeach" -> {
+                if (!isAdmin(listener)){
+                    return;
+                }
+                if (!inBounds(listener.getMessageContent().split(" "), 2)){
+                    listener.getChannel().sendMessage("Not enough arguments!"); return;
+                }
+                String achName = listener.getMessageContent().split(" ")[1];
+                String id = readValueFromArraySeparated(listener.getMessageContent().split(" "), 2, listener.getMessageContent().split(" ").length);
+                Document user = getDocAnyway(id);
+                java.util.List<String> yes = user.getList("achievements", String.class);
+                java.util.List<String> newArray = new ArrayList<>(yes);
+                newArray.remove(achName);
+                MongoDbUpdate(user, Updates.set("achievements", newArray));
             }
         }
     }

@@ -1,24 +1,31 @@
 package plugin.functions;
 
+import arc.struct.ObjectSet;
 import arc.util.Log;
 import arc.util.Timer;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
+import mindustry.Vars;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
+import mindustry.net.Administration;
+import mindustry.net.NetConnection;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 import static plugin.Plugin.plrCollection;
 import static plugin.utils.FindDocument.getDoc;
+import static plugin.utils.FindDocument.getDocByIP;
 
 public class MongoDB {
+    public static List<String> achievements = new ArrayList<>();
     public static void MongoDbPlayerCreation(Player eventPlayer){
         long lastBan = 0;
         long discordid = 0;
@@ -32,6 +39,9 @@ public class MongoDB {
         plrDoc.append("lastBan", lastBan);
         plrDoc.append("discordid", discordid);
         plrDoc.append("playtime", 0);
+        plrDoc.append("achievements", achievements);
+        plrDoc.append("ip", eventPlayer.con().address);
+        plrDoc.append("joinmessage", "@ [white]joined");
         Document chk = plrCollection.find(Filters.eq("uuid", eventPlayer.uuid())).first();
         if (chk == null){
             plrCollection.insertOne(plrDoc);
@@ -65,11 +75,16 @@ public class MongoDB {
     public static void MongoDbPlayerNameCheck(Player player){
         Document user = getDoc(player.uuid());
         if (player.plainName() != user.getString("name") && player.name() != user.getString("rawName")){
-            Bson updates = Updates.combine(
-                    Updates.set("name", player.plainName()),
-                    Updates.set("rawName", player.name())
-            );
             MongoDbUpdate(user, Updates.set("name", player.plainName()), Updates.set("rawName", player.name()));
+        }
+    }
+    public static void MongoDbPlayerIpCheck(NetConnection player){
+        Document user = getDocByIP(player.address);
+        if (user == null){
+            return;
+        }
+        if (player.address != user.getString("ip")){
+            MongoDbUpdate(user, Updates.set("ip", player.address));
         }
     }
     public static void MongoDbUpdate(Document user, Bson... updates){
@@ -88,15 +103,19 @@ public class MongoDB {
         }, 0, 60);
     }
     public static void MongoDbCheck(){
-        AtomicInteger totalUpdates = new AtomicInteger(0);
         try (MongoCursor<Document> cursor = plrCollection.find().iterator()) {
             while (cursor.hasNext()) {
                 Document csr = cursor.next();
-                int i = (int) csr.getOrDefault("playtime", 0);
-                MongoDbUpdate(csr, Updates.set("playtime", i));
-                totalUpdates.getAndAdd(1);
+                ObjectSet<Administration.PlayerInfo> ip = Vars.netServer.admins.findByName(csr.getString("uuid"));
+                if (ip.size != 0) {
+                    appendIfNull(csr, "joinmessage", "@ [white]joined");
+                }
             }
         }
-        Log.info(totalUpdates + " Documents has been fetched/updated!");
+    }
+    public static void appendIfNull(Document user, String key, Object defaultValue){
+        if (user.get(key) == null){
+            MongoDbUpdate(user, Updates.set(key, defaultValue));
+        }
     }
 }

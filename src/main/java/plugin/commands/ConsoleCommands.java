@@ -17,8 +17,7 @@ import java.util.ArrayList;
 import static arc.util.Strings.canParseInt;
 import static arc.util.Strings.parseInt;
 import static plugin.Plugin.plrCollection;
-import static plugin.functions.MongoDB.MongoDbPlayerRankCheck;
-import static plugin.functions.MongoDB.MongoDbUpdate;
+import static plugin.functions.MongoDB.*;
 import static plugin.utils.FindDocument.getDoc;
 import static plugin.utils.FindDocument.getDocAnyway;
 
@@ -52,6 +51,9 @@ public class ConsoleCommands {
                 return;
             }
             MongoDbPlayerRankCheck(user.getString("uuid"));
+        });
+        handler.register("check", "Checks mongodb", (args, params) -> {
+            MongoDbCheck();
         });
     }
 }
