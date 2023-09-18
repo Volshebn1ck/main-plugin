@@ -186,7 +186,7 @@ public class MainCommands {
                 }
                 player.sendMessage(list.toString());
             } else {
-                player.sendMessage("лох ебаный");
+                player.sendMessage("[red]Invalid type!");
             }
         });
     }

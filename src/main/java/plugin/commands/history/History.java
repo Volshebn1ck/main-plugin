@@ -69,7 +69,6 @@ public class History {
             event.player.sendMessage(list.toString());
         });*/
         Events.run(EventType.Trigger.update, () -> {
-            Threads.daemon(() -> {
                 for (Player plr : Groups.player){
                     if (historyPlayers.contains(plr.uuid())) {
                         Tile Eventtile = world.tileWorld(plr.mouseX, plr.mouseY);
@@ -89,7 +88,6 @@ public class History {
                         }
                     }
                 }
-            });
         });
         Events.on(EventType.GameOverEvent.class, event -> {
             historyTilesSeq.clear();

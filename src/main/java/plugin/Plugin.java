@@ -68,6 +68,9 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener{
             kickIfBanned(event.player);
             Document user = getDoc(plr.uuid());
             String joinMessage = user.getString("joinmessage");
+            if (joinMessage == null){
+                joinMessage = "@ [white]joined";
+            }
             if (joinMessage.endsWith(" ")){
                 joinMessage = joinMessage.substring(0, joinMessage.length()-1);
             }
@@ -108,6 +111,9 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener{
         });
         Events.on(EventType.PlayerLeave.class, event -> {
             historyPlayers.remove(event.player.uuid());
+            Player plr = event.player;
+            Document user = getDoc(plr.uuid());
+            Call.sendMessage(plr.name() + "[white] left " + "[grey][" + user.getInteger("id") + "]");
         });
     }
 
