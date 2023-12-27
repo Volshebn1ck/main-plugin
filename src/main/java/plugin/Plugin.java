@@ -27,6 +27,7 @@ import plugin.etc.AntiVpn;
 import plugin.models.PlayerData;
 import useful.Bundle;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
@@ -72,6 +73,10 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener{
         mongoClient = MongoClients.create(string);
         db = mongoClient.getDatabase("mindustry").withCodecRegistry(pojoCodecRegistry);
         newCollection = db.getCollection("newplayers", PlayerData.class);
+        File dir = new File(Vars.tmpDirectory.absolutePath());
+        if (!dir.exists()){
+            dir.mkdir();
+        }
     }
 
     //  starts once plugin is started

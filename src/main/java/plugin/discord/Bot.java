@@ -205,7 +205,6 @@ public class Bot {
                 String response;
 
                 String id = listener.getMessageContent().split(" ")[1];
-                MessageAttachment atc = listener.getMessage().getAttachments().get(0);
                 String reason = readValueFromArraySeparated(listener.getMessageContent().split(" "), 3, listener.getMessageContent().split(" ").length);
                 if (!canParseInt(listener.getMessageContent().split(" ")[2])){
                     listener.getChannel().sendMessage("Please, type a number in time!");
