@@ -60,7 +60,9 @@ public class AntiVpn {
         var ip = parseSubnet(address).ip;
 
         for (var subnet : subnets)
-            if ((ip & subnet.mask) == subnet.ip) return true;
+            if (subnet != null) {
+                if ((ip & subnet.mask) == subnet.ip) return true;
+            }
 
         return false;
     }

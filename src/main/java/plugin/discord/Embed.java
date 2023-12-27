@@ -3,6 +3,7 @@ package plugin.discord;
 import org.bson.Document;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.Role;
+import plugin.models.PlayerData;
 
 import java.awt.*;
 import java.util.Optional;
@@ -11,12 +12,12 @@ import static arc.util.Strings.stripColors;
 
 public class Embed {
 
-    public static EmbedBuilder banEmbed(Document user, String reason, long banTime, String moderator){
+    public static EmbedBuilder banEmbed(PlayerData data, String reason, long banTime, String moderator){
         return new EmbedBuilder()
             .setTitle("Ban event")
             .setColor(Color.RED)
-            .addField("**ID**", String.valueOf(user.getInteger("id")))
-            .addField("**Name**", stripColors(user.getString("name")))
+            .addField("**ID**", String.valueOf(data.id))
+            .addField("**Name**", data.name)
             .addField("**Reason**", reason)
             .addField("**Expires**", "<t:" + banTime/1000 +":D>")
             .addField("**Moderator**", moderator);

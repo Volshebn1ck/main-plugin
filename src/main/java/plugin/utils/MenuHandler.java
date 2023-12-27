@@ -3,17 +3,17 @@ package plugin.utils;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
 import mindustry.gen.Call;
-import mindustry.gen.Player;
 import mindustry.ui.Menus;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.javacord.api.event.interaction.SlashCommandCreateEvent;
 import org.javacord.api.event.message.MessageCreateEvent;
 import plugin.Plugin;
+import plugin.models.PlayerData;
 
 import static plugin.ConfigJson.discordurl;
 import static plugin.functions.MongoDB.MongoDbPlayerRankCheck;
-import static plugin.utils.FindDocument.getDoc;
+import static plugin.functions.MongoDB.MongoDbUpdate;
+import static plugin.utils.FindDocument.getPlayerData;
 
 
 public class MenuHandler {
@@ -38,30 +38,21 @@ public class MenuHandler {
         public static void loginMenuFunction(MessageCreateEvent listener){
             loginMenu = Menus.registerMenu(((player, option) -> {
                 switch (option){
-                    case -1 -> {
-                        return;
+                    case -1, 1 -> {
                     }
                     case 0 -> {
                         long discordId = listener.getMessageAuthor().getId();
-                        Document user = getDoc(player.uuid());
-                        Bson updates;
-                        if (user.getInteger("rank") == 0){
-                            updates = Updates.combine(
-                                    Updates.set("discordid", discordId),
-                                    Updates.set("rank", 1)
-                            );
+                        PlayerData data = getPlayerData(player.uuid());
+                        if (data.rank == "player"){
+                            data.discordId = discordId;
+                            data.rank = "trusted";
                         } else{
-                            updates = Updates.combine(
-                                    Updates.set("discordid", discordId)
-                            );
+                            data.discordId = discordId;
                         }
-                        Plugin.plrCollection.updateOne(user, updates, new UpdateOptions().upsert(true));
+                        MongoDbUpdate(data);
                         player.sendMessage("[blue]Successfully connected your discord: " + listener.getMessageAuthor().getName());
                         listener.getChannel().sendMessage("Successfully connected your mindustry account!");
-                        MongoDbPlayerRankCheck(user.getString("uuid"));
-                    }
-                    case 1 -> {
-                        return;
+                        MongoDbPlayerRankCheck(data.uuid);
                     }
                 }
         }));

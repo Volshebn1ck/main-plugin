@@ -6,21 +6,22 @@ public class Ranks{
     public static String adminRank = "[red]Administrator";
     public static String consoleRank = "[purple]Console";
     public static String ownerRank = "[cyan]Owner";
-    public static String rankName(int rankid){
+    public static String[] ranks = new String[]{"player", "trusted", "admin", "console", "owner"};
+    public static String rankName(String rankid){
         switch (rankid){
-            case 0 -> {
+            case "player" -> {
                 return playerRank;
             }
-            case 1 -> {
+            case "trusted" -> {
                 return trustedRank;
             }
-            case 2 -> {
+            case "admin" -> {
                 return adminRank;
             }
-            case 3 -> {
+            case "console" -> {
                 return consoleRank;
             }
-            case 4 -> {
+            case "owner" -> {
                 return ownerRank;
             }
         }

@@ -5,6 +5,7 @@ import arc.Events;
 import arc.util.CommandHandler;
 import arc.util.Log;
 import arc.util.Strings;
+import com.mongodb.ConnectionString;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
@@ -16,16 +17,25 @@ import mindustry.gen.Groups;
 import mindustry.gen.Player;
 import mindustry.net.Packets;
 import org.bson.Document;
+import org.bson.codecs.configuration.CodecProvider;
+import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.codecs.pojo.PojoCodecProvider;
+import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 import plugin.discord.Bot;
 import plugin.etc.AntiVpn;
+import plugin.models.PlayerData;
 import useful.Bundle;
 
-import javax.sql.ConnectionEvent;
 import java.io.IOException;
+import java.util.Map;
 
+import static com.mongodb.MongoClientSettings.getDefaultCodecRegistry;
 import static mindustry.Vars.*;
+import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
+import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 import static plugin.ConfigJson.discordurl;
+import static plugin.ServersConfig.makeServersConfig;
 import static plugin.commands.BanMenu.loadBanMenu;
 import static plugin.commands.ConsoleCommands.loadServerCommands;
 import static plugin.commands.MainCommands.*;
@@ -35,21 +45,33 @@ import static plugin.etc.AntiVpn.loadAntiVPN;
 import static plugin.functions.MongoDB.*;
 import static plugin.functions.Other.kickIfBanned;
 import static plugin.functions.Other.welcomeMenu;
-import static plugin.utils.FindDocument.getDoc;
+import static plugin.utils.FindDocument.getPlayerData;
 
 
 public class Plugin extends mindustry.mod.Plugin implements ApplicationListener{
     public static MongoClient mongoClient;
     public static MongoDatabase db;
-    public static MongoCollection<Document> plrCollection;
+    public static MongoCollection<PlayerData> newCollection;
+    public static JSONObject servers;
+
+    static {
+        try {
+            servers = makeServersConfig();
+        } catch (IOException | ParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     // loads bot and other shit
     public Plugin() throws IOException, ParseException {
         ConfigJson.read();
         Bot.load();
-        mongoClient = MongoClients.create(ConfigJson.mongodburl);
-        db = mongoClient.getDatabase("mindustry");
-        plrCollection = db.getCollection("players");
+        ConnectionString string = new ConnectionString(ConfigJson.mongodburl);
+        CodecProvider pojoCodecProvider = PojoCodecProvider.builder().automatic(true).build();
+        CodecRegistry pojoCodecRegistry = fromRegistries(getDefaultCodecRegistry(), fromProviders(pojoCodecProvider));
+        mongoClient = MongoClients.create(string);
+        db = mongoClient.getDatabase("mindustry").withCodecRegistry(pojoCodecRegistry);
+        newCollection = db.getCollection("newplayers", PlayerData.class);
     }
 
     //  starts once plugin is started
@@ -62,19 +84,16 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener{
         Events.on(EventType.PlayerJoin.class, event -> {
             Player plr = event.player;
             welcomeMenu(plr);
-            MongoDbPlayerCreation(plr);
-            MongoDbPlayerNameCheck(event.player);
+            PlayerData data = findPlayerDataOrCreate(event.player);
+            fillData(data, event.player);
             MongoDbPlayerRankCheck(plr.uuid());
             kickIfBanned(event.player);
-            Document user = getDoc(plr.uuid());
-            String joinMessage = user.getString("joinmessage");
-            if (joinMessage == null){
-                joinMessage = "@ [white]joined";
-            }
+            String joinMessage = data.joinMessage;
             if (joinMessage.endsWith(" ")){
                 joinMessage = joinMessage.substring(0, joinMessage.length()-1);
             }
-            Call.sendMessage(Strings.format(joinMessage + " [grey][" + user.getInteger("id") + "]", plr.name()));
+            Call.sendMessage(Strings.format(joinMessage + " [grey][" + data.id + "]", plr.name()));
+            Log.info(plr.plainName() + " joined! " + "[" + data.id + "]");
         });
         MongoDbPlaytimeTimer();
         Vars.net.handleServer(Packets.Connect.class, (con, connect) -> {
@@ -90,18 +109,22 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener{
         });
         Events.on(EventType.PlayerChatEvent.class, event ->{
             if (isVoting){
-                if (votedPlayer.contains(event.player)){
-                    event.player.sendMessage("You already voted!");
-                    return;
-                }
                 int votesRequired = (int) Math.ceil((double) Groups.player.size()/2);
                 switch (event.message){
                     case "y" ->{
+                        if (votedPlayer.contains(event.player)){
+                            event.player.sendMessage("You already voted!");
+                            return;
+                        }
                         votes.getAndAdd(1);
                         votedPlayer.add(event.player);
                         Call.sendMessage(event.player.plainName() +" Voted: " + votes.get() +"/"+ votesRequired);
                     }
                     case "n" ->{
+                        if (votedPlayer.contains(event.player)){
+                            event.player.sendMessage("You already voted!");
+                            return;
+                        }
                         votes.getAndAdd(-1);
                         votedPlayer.add(event.player);
                         Call.sendMessage(event.player.plainName() +" Voted: " + votes.get() +"/"+ votesRequired);
@@ -112,8 +135,9 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener{
         Events.on(EventType.PlayerLeave.class, event -> {
             historyPlayers.remove(event.player.uuid());
             Player plr = event.player;
-            Document user = getDoc(plr.uuid());
-            Call.sendMessage(plr.name() + "[white] left " + "[grey][" + user.getInteger("id") + "]");
+            PlayerData data = getPlayerData(plr.uuid());
+            Call.sendMessage(plr.name() + "[white] left " + "[grey][" + data.id + "]");
+            Log.info(plr.plainName() + " left " + "[" + data.id + "]");
         });
     }
 

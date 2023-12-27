@@ -3,6 +3,7 @@ package plugin.commands;
 import arc.Events;
 import arc.struct.Seq;
 import arc.util.CommandHandler;
+import arc.util.Log;
 import arc.util.Strings;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.FindIterable;
@@ -15,8 +16,10 @@ import mindustry.gen.Call;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
 import mindustry.maps.Map;
-import org.bson.BsonDocument;
 import org.bson.Document;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import plugin.models.PlayerData;
 import useful.Bundle;
 
 import java.time.Duration;
@@ -27,15 +30,19 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static arc.util.Strings.canParseInt;
-import static arc.util.Strings.parseInt;
-import static mindustry.Vars.*;
+import static mindustry.Vars.mods;
+import static mindustry.Vars.port;
 import static plugin.ConfigJson.discordurl;
-import static plugin.Plugin.plrCollection;
+import static plugin.Plugin.newCollection;
+import static plugin.Plugin.servers;
+import static plugin.commands.Menus.achMenu;
 import static plugin.commands.history.History.historyPlayers;
+import static plugin.functions.MongoDB.MongoDbPlayerRankCheck;
 import static plugin.functions.MongoDB.MongoDbUpdate;
 import static plugin.functions.Other.statsMenu;
 import static plugin.utils.Checks.isConsole;
-import static plugin.utils.FindDocument.getDoc;
+import static plugin.utils.Checks.isVipOrOwner;
+import static plugin.utils.FindDocument.getPlayerData;
 import static plugin.utils.Utilities.*;
 
 public class MainCommands {
@@ -60,14 +67,14 @@ public class MainCommands {
         handler.<Player>register("list", "Lists all players on the server", (args, player) -> {
             StringBuilder list = new StringBuilder();
             for (Player plr : Groups.player){
-                Document user = plrCollection.find(Filters.eq("uuid", plr.uuid())).first();
-                int id = user.getInteger("id");
+                PlayerData data = newCollection.find(Filters.eq("uuid", plr.uuid())).first();
+                int id = data.id;
                 list.append(plr.name()+ "; [white]ID: " + id + "\n");
             }
             player.sendMessage(String.valueOf(list));
         });
         handler.<Player>register("js", "<code...>", "Execute JavaScript code.", (args, player) -> {
-            Document user = plrCollection.find(Filters.eq("uuid", player.uuid())).first();
+            PlayerData data = newCollection.find(Filters.eq("uuid", player.uuid())).first();
             if (player.admin() && isConsole(player.uuid())) {
                 try {
                     String output = mods.getScripts().runConsole(args[0]);
@@ -163,13 +170,14 @@ public class MainCommands {
             player.sendMessage("[green]History has been enabled!");
         });
         handler.<Player>register("joinmessage", "<message...>",  "Makes custom join message! @ -> your name. Make sure this message wont break any rule!", (args, player) -> {
-            Document user = getDoc(player.uuid());
+            PlayerData data = getPlayerData(player.uuid());
             if (args[0].length() >= 30){
                 player.sendMessage("Too much symbols! Limit is 30");
                 return;
             }
             if (Strings.count(args[0], "@") == 1){
-                MongoDbUpdate(user, Updates.set("joinmessage", args[0]));
+                data.joinMessage = args[0];
+                MongoDbUpdate(data);
                 player.sendMessage("[green]Changed your join message!");
             } else {
                 player.sendMessage("[red]You dont have @ symbol or its count is more than one");
@@ -179,15 +187,54 @@ public class MainCommands {
             StringBuilder list = new StringBuilder();
             if (Objects.equals(args[0], "playtime")){
                 list.append("[orange]Playtime leaderboard: \n");
-                FindIterable<Document> sort = plrCollection.find().sort(new BasicDBObject("playtime", -1)).limit(10);
-                for (Document user : sort){
-                    int playtime = user.getInteger("playtime");
-                    list.append(user.getString("rawName") + "[white]: " + Bundle.formatDuration(Duration.ofMinutes(playtime)) + "\n");
+                FindIterable<PlayerData> sort = newCollection.find().sort(new BasicDBObject("playtime", -1)).limit(10);
+                for (PlayerData data : sort){
+                    int playtime = data.playtime;
+                    list.append(data.rawName + "[white]: " + Bundle.formatDuration(Duration.ofMinutes(playtime)) + "\n");
                 }
                 player.sendMessage(list.toString());
             } else {
                 player.sendMessage("[red]Invalid type!");
             }
+        });
+        handler.<Player>register("customprefix", "<prefix>", "Sets custom prefix (VIP ONLY)!", (args, player) -> {
+            PlayerData data = getPlayerData(player.uuid());
+            if (!isVipOrOwner(player.uuid())){
+                player.sendMessage("[red]You dont have VIP!"); return;
+            }
+            if (args[0].length() > 60){
+                player.sendMessage("Prefix is too long! Make it shorter:" + args[0].length() + "/" + 60); return;
+            }
+            data.customPrefix = args[0];
+            MongoDbUpdate(data);
+            player.sendMessage("Prefix has been changed!");
+            MongoDbPlayerRankCheck(player.uuid());
+        });
+        handler.<Player>register("achievements",  "Views your achievements", (args, player) -> {
+            achMenu(player);
+        });
+        handler.<Player>register("serverhop", "<server>", "Hops to server", (args, parameter) -> {
+            JSONArray array = (JSONArray) servers.get("servers");
+            Seq<Server> servers = new Seq<>();
+            for (Object object : array){
+                JSONObject jsonObject = (JSONObject) object;
+                Server serv = new Server((String) jsonObject.get("servername"), (String) jsonObject.get("ip"), (Long) jsonObject.get("port"));
+                servers.add(serv);
+            }
+            if (servers.contains(server -> server.name.contains(args[0]))){
+                Server serv = servers.find(server -> server.name.contains(args[0]));
+                Call.connect(parameter.con, serv.ip, Math.toIntExact(serv.port));
+            }
+        });
+        handler.<Player>register("servers",  "Lists all servers", (args, parameter) -> {
+            JSONArray array = (JSONArray) servers.get("servers");
+            StringBuilder list = new StringBuilder();
+            list.append("[yellow]SERVER LIST:\n\n[white]");
+            for (Object object : array){
+                JSONObject jsonObject = (JSONObject) object;
+                list.append(jsonObject.get("servername")).append(": ").append(jsonObject.get("ip")).append(":").append(jsonObject.get("port")).append("\n");
+            }
+            parameter.sendMessage(list.toString());
         });
     }
 }

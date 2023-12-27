@@ -17,7 +17,7 @@ jar {
     enabled = true
 }
 ext {
-    mindustryVersion = 'v145.1'
+    mindustryVersion = 'v146'
 }
 tasks.withType(JavaCompile) {
     sourceCompatibility = JavaVersion.VERSION_17

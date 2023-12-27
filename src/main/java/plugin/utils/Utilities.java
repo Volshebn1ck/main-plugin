@@ -10,16 +10,19 @@ import mindustry.gen.Call;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
 import mindustry.maps.Map;
-import mindustry.net.WorldReloader;
 import mindustry.server.ServerControl;
 import org.bson.Document;
+import org.javacord.api.event.message.MessageCreateEvent;
+import plugin.models.PlayerData;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.List;
 
-import static mindustry.Vars.logic;
 import static plugin.commands.MainCommands.votedPlayer;
 import static plugin.commands.MainCommands.votes;
-import static plugin.utils.FindDocument.getDoc;
+import static plugin.utils.FindDocument.getPlayerData;
 
 public class Utilities {
     // finds player using their name (without colors)
@@ -27,8 +30,8 @@ public class Utilities {
         return Groups.player.find(t-> t.plainName().contains(name));
     }
     public static Player findPlayerByID(int id){
-        Document user = getDoc(id);
-        return Groups.player.find(t-> t.uuid().equals(user.getString("uuid")));
+        PlayerData data = FindDocument.getPlayerData(id);
+        return Groups.player.find(t-> t.uuid().equals(data.uuid));
     }
     public static <T> T notNullElse(T value, T value2){
         return value != null ? value : value2;
@@ -40,7 +43,7 @@ public class Utilities {
     }
     public static void voteSuccess(Map map){
         Call.sendMessage("[green]Vote success! Changing map!");
-        Reflect.set(ServerControl.instance, "nextMapOverride", map);
+        ServerControl.instance.setNextMap(map);
         Events.fire(new EventType.GameOverEvent(Team.derelict));
         votes.set(0);
         votedPlayer.clear();
@@ -51,6 +54,16 @@ public class Utilities {
             maps.add(map);
         }
         return maps;
+    }
+    public static String formatRanks(int rank){
+        switch (rank){
+            case 0: return "player";
+            case 1: return "trusted";
+            case 2: return "admin";
+            case 3: return "console";
+            case 4: return "owner";
+        }
+        return "player";
     }
 }
 

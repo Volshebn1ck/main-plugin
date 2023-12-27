@@ -6,9 +6,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
 
 public class ConfigJson {
     // literally variables for other shit
@@ -34,7 +33,22 @@ public class ConfigJson {
             adminid= (String) object.get("adminid");
             prefix = (String) object.get("prefix");
         }catch(Exception e){
-            Log.err("Skill issue: " + e);
+            Log.err("Config reading failed! Creating config file! Make sure to setup everything to prevent further errors!");
+            File config = new File(Vars.dataDirectory.absolutePath() + "/" + "config.json");
+            FileWriter writer = new FileWriter(Vars.dataDirectory.absolutePath() + "/" + "config.json");
+            writer.write(
+                    "{\n" +
+                            "    \"token\": \"bot token\",\n" +
+                            "    \"logchannelid\": \"channel where messages will be logged\",\n" +
+                            "    \"banlogchannelid\": \"channel where bans will be logged\",\n" +
+                            "    \"mongodburl\": \"Mongo Database URL connection\",\n" +
+                            "    \"discordurl\": \"Discord invite code\",\n" +
+                            "    \"moderatorid\": \"Role ID of moderator\",\n" +
+                            "    \"adminid\": \"Role ID of admin\"\n" +
+                            "    \"prefix\": \"bot prefix\"\n" +
+                            "}\n"
+            );
+            writer.close();
         }
     }
 }

@@ -3,119 +3,122 @@ package plugin.functions;
 import arc.struct.ObjectSet;
 import arc.util.Log;
 import arc.util.Timer;
+import com.mongodb.BasicDBObject;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.UpdateOptions;
-import com.mongodb.client.model.Updates;
+import com.mongodb.client.model.ReplaceOptions;
 import mindustry.Vars;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
 import mindustry.net.Administration;
 import mindustry.net.NetConnection;
-import org.bson.Document;
-import org.bson.conversions.Bson;
-import org.bson.types.ObjectId;
+import plugin.models.PlayerData;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
-import static plugin.Plugin.plrCollection;
-import static plugin.utils.FindDocument.getDoc;
-import static plugin.utils.FindDocument.getDocByIP;
+import static com.mongodb.client.model.Filters.eq;
+import static plugin.Plugin.newCollection;
+import static plugin.utils.FindDocument.getPlayerData;
+import static plugin.utils.FindDocument.getPlayerDataByIP;
 
 public class MongoDB {
-    public static List<String> achievements = new ArrayList<>();
-    public static void MongoDbPlayerCreation(Player eventPlayer){
-        long lastBan = 0;
-        long discordid = 0;
-        var id = new ObjectId();
-        Document plrDoc = new Document("_id", id);
-        plrDoc.append("id", (int) plrCollection.countDocuments());
-        plrDoc.append("uuid", eventPlayer.uuid());
-        plrDoc.append("name", eventPlayer.plainName());
-        plrDoc.append("rawName", eventPlayer.name());
-        plrDoc.append("rank", 0);
-        plrDoc.append("lastBan", lastBan);
-        plrDoc.append("discordid", discordid);
-        plrDoc.append("playtime", 0);
-        plrDoc.append("achievements", achievements);
-        plrDoc.append("ip", eventPlayer.con().address);
-        plrDoc.append("joinmessage", "@ [white]joined");
-        Document chk = plrCollection.find(Filters.eq("uuid", eventPlayer.uuid())).first();
-        if (chk == null){
-            plrCollection.insertOne(plrDoc);
-        } else {
-            return;
-        }
+    public static PlayerData findPlayerDataOrCreate(Player eventPlayer){
+        return Optional.ofNullable(newCollection.find(eq("uuid", eventPlayer.uuid())).first()).orElse(
+                new PlayerData(eventPlayer.uuid(), getNextID())
+        );
     }
-    public static void MongoDbPlayerRankCheck(String uuid){
+    public static void fillData(PlayerData data, Player plr){
+        data.name = plr.plainName();
+        data.rawName = plr.name();
+        data.ip = plr.con.address;
+        data.uuid = plr.uuid();
+        newCollection.replaceOne(eq("_id", data.id), data, new ReplaceOptions().upsert(true));
+    }
+    public static void MongoDbPlayerRankCheck(String uuid) {
         Player eventPlayer = Groups.player.find(p -> p.uuid().contains(uuid));
-        Document user = plrCollection.find(Filters.eq("uuid", uuid)).first();
-        String tempName = user.getString("rawName");
-        int rank = user.getInteger("rank");
-        switch (rank){
-            case 0 ->{
-                eventPlayer.name = "[white]<P> [orange]" + tempName;
-            }
-            case 1 ->{
-                eventPlayer.name = "[blue]<T> [orange]" + tempName;
-            }
-            case 2 ->{
-                eventPlayer.name = "[#f]<A> [orange]" + tempName;
-            }
-            case 3 ->{
-                eventPlayer.name = "[purple]<C> [orange]" + tempName;
-            }
-            case 4 -> {
-                eventPlayer.name = "[cyan]<O> [orange]" + tempName;
+        if (eventPlayer == null) return;
+        PlayerData data = getPlayerData(uuid);
+        String tempName = data.rawName;
+        if (!Objects.equals(data.customPrefix, "<none>")){
+            eventPlayer.name = data.customPrefix + " [" + "#" + eventPlayer.color.toString() + "]" + tempName;
+        } else {
+            switch (data.rank) {
+                case "player" -> eventPlayer.name = "[white]<P>" +" [" + "#" + eventPlayer.color.toString() + "]" + tempName;
+                case "trusted" -> eventPlayer.name = "[blue]<T>" +" [" + "#" + eventPlayer.color.toString() + "]" + tempName;
+                case "admin" -> eventPlayer.name = "[#f]<A>" +" [" + "#" + eventPlayer.color.toString() + "]" + tempName;
+                case "console" -> eventPlayer.name = "[purple]<C>" +" [" + "#" + eventPlayer.color.toString() + "]" + tempName;
+                case "owner" -> eventPlayer.name = "[cyan]<O>" +" [" + "#" + eventPlayer.color.toString() + "]" + tempName;
             }
         }
-    }
-    public static void MongoDbPlayerNameCheck(Player player){
-        Document user = getDoc(player.uuid());
-        if (player.plainName() != user.getString("name") && player.name() != user.getString("rawName")){
-            MongoDbUpdate(user, Updates.set("name", player.plainName()), Updates.set("rawName", player.name()));
-        }
+
     }
     public static void MongoDbPlayerIpCheck(NetConnection player){
-        Document user = getDocByIP(player.address);
-        if (user == null){
+        PlayerData data = getPlayerDataByIP(player.address);
+        if (data == null) {
             return;
         }
-        if (player.address != user.getString("ip")){
-            MongoDbUpdate(user, Updates.set("ip", player.address));
-        }
+        data.ip = player.address;
+        MongoDbUpdate(data);
     }
-    public static void MongoDbUpdate(Document user, Bson... updates){
-        Bson update = Updates.combine(
-                updates
-        );
-        plrCollection.updateOne(user, update, new UpdateOptions().upsert(true));
+    public static <T> void MongoDbUpdate(PlayerData data){
+        newCollection.replaceOne(eq("_id", data.id), data, new ReplaceOptions().upsert(true));
     }
     public static void MongoDbPlaytimeTimer(){
-        Timer.schedule(() -> {
-            for (Player player : Groups.player){
-                Document user = getDoc(player.uuid());
-                int playtime = (int) user.getOrDefault("playtime", 0) + 1;
-                MongoDbUpdate(user, Updates.set("playtime", playtime));
+            Timer.schedule(() -> {
+                for (Player player : Groups.player){
+                    PlayerData data = getPlayerData(player.uuid());
+                    if (data == null) return;
+                    data.playtime += 1;
+                    MongoDbUpdate(data);
+                }
+            try (MongoCursor<PlayerData> cursor = newCollection.find(Filters.gte("playtime", 2250)).iterator()) {
+                while (cursor.hasNext()) {
+                    PlayerData csr = cursor.next();
+                    String activeAch = "[lime]Hyper[green]active";
+                    if (!csr.achievements.contains(activeAch)) {
+                        Log.debug(csr.name);
+                        csr.achievements.add(activeAch);
+                        MongoDbUpdate(csr);
+                    }
+                }
+            }
+            try (MongoCursor<PlayerData> cursor = newCollection.find(Filters.lte("_id", 150)).iterator()) {
+                while (cursor.hasNext()) {
+                    PlayerData csr = cursor.next();
+                    String activeAch = "[orange]Vete[yellow]ran";
+                    if (!csr.achievements.contains(activeAch)) {
+                        Log.debug(csr.name);
+                        csr.achievements.add(activeAch);
+                        MongoDbUpdate(csr);
+                    }
+                }
             }
         }, 0, 60);
     }
     public static void MongoDbCheck(){
-        try (MongoCursor<Document> cursor = plrCollection.find().iterator()) {
+        try (MongoCursor<PlayerData> cursor = newCollection.find().iterator()) {
             while (cursor.hasNext()) {
-                Document csr = cursor.next();
-                ObjectSet<Administration.PlayerInfo> ip = Vars.netServer.admins.findByName(csr.getString("uuid"));
-                if (ip.size != 0) {
+                PlayerData csr = cursor.next();
+                ObjectSet<Administration.PlayerInfo> ip = Vars.netServer.admins.findByName(csr.uuid);
+                /*if (ip.size != 0) {
                     appendIfNull(csr, "joinmessage", "@ [white]joined");
-                }
+                }*/
             }
         }
     }
-    public static void appendIfNull(Document user, String key, Object defaultValue){
+/*    public static void appendIfNull(Document user, String key, Object defaultValue){
         if (user.get(key) == null){
             MongoDbUpdate(user, Updates.set(key, defaultValue));
         }
+    }*/
+    public static int getNextID(){
+        PlayerData data = newCollection.find().sort(new BasicDBObject("_id", -1)).first();
+        if (data == null){
+            return 0;
+        }
+        return data.id + 1;
     }
 }
