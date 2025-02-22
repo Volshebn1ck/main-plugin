@@ -3,7 +3,7 @@ package plugin.etc;
 public class Ranks {
     public enum Rank {
         None("none", ""),
-        Player("[white]Player", "[white]<P>"),
+        Player("[white]Player", ""),
         Verified("[blue]Verified", "[blue]<V>"),
         Moderator("[blue]Moderator", "[blue]<M>"),
         JS("[purple]JS", "[purple]<JS>"),
