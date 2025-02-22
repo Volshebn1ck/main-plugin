@@ -134,7 +134,7 @@ public class Bot {
             case "ranks" -> {
                 String response = "```" +
                         "Player -> Basic rank that given to all players on our server\n" +
-                        "Trused -> In order to get it you should connect your mindustry account to discord using /login\n" +
+                        "Verified -> In order to get it you should connect your mindustry account to discord using /login\n" +
                         "Administrator -> Administrator of our servers.\n" +
                         "Console -> People that have access to game console and javascript execution\n" +
                         "Owner -> Rank of owner, has access to everything" +

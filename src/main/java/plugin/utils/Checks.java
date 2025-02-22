@@ -7,8 +7,8 @@ import java.util.Objects;
 
 import static plugin.utils.FindDocument.*;
 public class Checks {
-    public static String[] adminRanks = new String[]{"admin", "console", "owner"};
-    public static String[] consoleRanks = new String[]{"console", "owner"};
+    public static String[] adminRanks = new String[]{"moderator", "js", "administrator"};
+    public static String[] consoleRanks = new String[]{"js", "administrator"};
     public static boolean isConsole(int id){
         PlayerData data = getPlayerData(id);
         return Arrays.stream(consoleRanks).anyMatch(rank -> rank.equals(data.rank));
