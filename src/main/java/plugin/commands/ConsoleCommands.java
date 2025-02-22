@@ -60,13 +60,13 @@ boolean isVip = Boolean.parseBoolean(isVipString);
                 Log.warn("No such player!");
                 return;
             }
-            if (!(isVip.equals("true") || isVip.equals("false"))){
+            if (!(isVipString.equals("true") || isVipString.equals("false"))){
                 Log.warn("true or false");
                 return;
             }
             data.isVip = isVip;
             MongoDbUpdate(data);
-            Log.info(data.isVip() == true ? "Given Vip." : "Removed Vip.");
+            Log.info(data.isVip == true ? "Given Vip." : "Removed Vip.");
             Player player = Groups.player.find(p -> p.uuid().equals(data.uuid));
             if (player == null){
                 return;
