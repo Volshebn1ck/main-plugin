@@ -52,6 +52,27 @@ public class ConsoleCommands {
             }
             MongoDbPlayerRankCheck(data.uuid);
         });
+        handler.register("setvip", "<id> <true/false>", "Sets vip to player", (args, params) -> {
+            PlayerData data = getPlayerDataAnyway(args[0]);
+            String isVipString = args[1];
+boolean isVip = Boolean.parseBoolean(isVipString);
+            if (data == null){
+                Log.warn("No such player!");
+                return;
+            }
+            if (!(isVip.equals("true") || isVip.equals("false"))){
+                Log.warn("true or false");
+                return;
+            }
+            data.isVip = isVip;
+            MongoDbUpdate(data);
+            Log.info(data.isVip() == true ? "Given Vip." : "Removed Vip.");
+            Player player = Groups.player.find(p -> p.uuid().equals(data.uuid));
+            if (player == null){
+                return;
+            }
+            MongoDbPlayerRankCheck(data.uuid);
+        });
         handler.register("check", "Checks mongodb", (args, params) -> {
             MongoDbCheck();
         });
