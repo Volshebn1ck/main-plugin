@@ -86,7 +86,7 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener{
         Bundle.load(Plugin.class);
         Events.on(EventType.PlayerJoin.class, event -> {
             Player plr = event.player;
-            welcomeMenu(plr);
+            if(!plr.admin) welcomeMenu(plr);
             PlayerData data = findPlayerDataOrCreate(event.player);
             fillData(data, event.player);
             MongoDbPlayerRankCheck(plr.uuid());
