@@ -1,16 +1,11 @@
 package plugin.utils;
 
-import com.mongodb.client.model.UpdateOptions;
-import com.mongodb.client.model.Updates;
 import mindustry.gen.Call;
 import mindustry.ui.Menus;
-import org.bson.Document;
-import org.bson.conversions.Bson;
 import org.javacord.api.event.message.MessageCreateEvent;
-import plugin.Plugin;
 import plugin.models.PlayerData;
 
-import static plugin.ConfigJson.discordurl;
+import static plugin.ConfigJson.discordUrl;
 import static plugin.functions.MongoDB.MongoDbPlayerRankCheck;
 import static plugin.functions.MongoDB.MongoDbUpdate;
 import static plugin.utils.FindDocument.getPlayerData;
@@ -23,7 +18,7 @@ public class MenuHandler {
                     return;
                 }
                 case 1 -> {
-                    Call.openURI(player.con, discordurl);
+                    Call.openURI(player.con, discordUrl);
                 }
             }
         }));

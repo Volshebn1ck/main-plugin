@@ -20,7 +20,6 @@ import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.intent.Intent;
 import org.javacord.api.entity.message.MessageAttachment;
-import org.javacord.api.entity.message.component.HighLevelComponent;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.event.message.MessageCreateEvent;
 import plugin.ConfigJson;
@@ -34,19 +33,17 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
 
 import static arc.util.Strings.*;
 import static mindustry.Vars.mods;
 import static mindustry.Vars.netServer;
-import static plugin.ConfigJson.discordurl;
+import static plugin.ConfigJson.discordUrl;
 import static plugin.Plugin.newCollection;
 import static plugin.discord.DiscordFunctions.*;
 import static plugin.discord.Embed.banEmbed;
-import static plugin.discord.Embed.noRoleEmbed;
-import static plugin.discord.Warnings.mapNotFound;
 import static plugin.discord.Warnings.noDataFound;
-import static plugin.etc.Ranks.ranks;
+import static plugin.etc.Ranks.Rank;
+import static plugin.etc.Ranks.getRank;
 import static plugin.functions.MongoDB.MongoDbPlayerRankCheck;
 import static plugin.functions.MongoDB.MongoDbUpdate;
 import static plugin.functions.Other.*;
@@ -72,8 +69,8 @@ public class Bot {
                 .join();
         api.addMessageCreateListener(Bot::onMessageCreate);
 /*        api.addSlashCommandCreateListener(Bot::addSlashCommandListener);*/
-        channel = api.getChannelById(ConfigJson.logchannelid).get().asTextChannel().get();
-        banchannel = api.getChannelById(ConfigJson.banlogchannelid).get().asTextChannel().get();
+        channel = api.getChannelById(ConfigJson.logChannelId).get().asTextChannel().get();
+        banchannel = api.getChannelById(ConfigJson.banLogChannelId).get().asTextChannel().get();
 /*        registerSlashCommands();*/
         init();
     }
@@ -137,7 +134,7 @@ public class Bot {
             case "ranks" -> {
                 String response = "```" +
                         "Player -> Basic rank that given to all players on our server\n" +
-                         "Trused -> In order to get it you should connect your mindustry account to discord using /login\n" +
+                        "Trused -> In order to get it you should connect your mindustry account to discord using /login\n" +
                         "Administrator -> Administrator of our servers.\n" +
                         "Console -> People that have access to game console and javascript execution\n" +
                         "Owner -> Rank of owner, has access to everything" +
@@ -223,7 +220,7 @@ public class Bot {
                 if (plr == null) {
                     Log.info("Player is offline, not kicking him");
                 } else {
-                    plr.con.kick("[red]You have been banned!\n\n" + "[white]Reason: " + reason + "\nDuration: " + timeUntilUnban + " until unban\nIf you think this is a mistake, make sure to appeal ban in our discord: " + discordurl, 0);
+                    plr.con.kick("[red]You have been banned!\n\n" + "[white]Reason: " + reason + "\nDuration: " + timeUntilUnban + " until unban\nIf you think this is a mistake, make sure to appeal ban in our discord: " + discordUrl, 0);
                 }
                 listener.getChannel().sendMessage("Banned: " + data.name);
 
@@ -259,16 +256,16 @@ public class Bot {
                     return;
                 }
                 PlayerData data = getPlayerDataAnyway(listener.getMessageContent().split(" ")[1]);
-                String rankid = listener.getMessageContent().split(" ")[2];
+                String rank = listener.getMessageContent().split(" ")[2];
                 if (data == null){
                     listener.getChannel().sendMessage("No such player!");
                     return;
                 }
-                if (!Arrays.asList(ranks).contains(rankid)){
+                if (getRank(rank) == Rank.None){
                     listener.getChannel().sendMessage("This rank doesnt exist!");
                     return;
                 }
-                data.rank = rankid;
+                data.rank = rank;
                 MongoDbUpdate(data);
                 listener.getChannel().sendMessage("Rank has been given!");
                 Player player = Groups.player.find(p -> p.uuid().equals(data.uuid));

@@ -16,7 +16,6 @@ import mindustry.gen.Call;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
 import mindustry.net.Packets;
-import org.bson.Document;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
@@ -29,13 +28,12 @@ import useful.Bundle;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 
 import static com.mongodb.MongoClientSettings.getDefaultCodecRegistry;
 import static mindustry.Vars.*;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
-import static plugin.ConfigJson.discordurl;
+import static plugin.ConfigJson.discordUrl;
 import static plugin.ServersConfig.makeServersConfig;
 import static plugin.commands.BanMenu.loadBanMenu;
 import static plugin.commands.ConsoleCommands.loadServerCommands;
@@ -67,7 +65,7 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener{
     public Plugin() throws IOException, ParseException {
         ConfigJson.read();
         Bot.load();
-        ConnectionString string = new ConnectionString(ConfigJson.mongodburl);
+        ConnectionString string = new ConnectionString(ConfigJson.mongodbUrl);
         CodecProvider pojoCodecProvider = PojoCodecProvider.builder().automatic(true).build();
         CodecRegistry pojoCodecRegistry = fromRegistries(getDefaultCodecRegistry(), fromProviders(pojoCodecProvider));
         mongoClient = MongoClients.create(string);
@@ -101,7 +99,7 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener{
             Log.info(plr.plainName() + " joined! " + "[" + data.id + "]");
         });
         MongoDbPlaytimeTimer();
-        Vars.net.handleServer(Packets.Connect.class, (con, connect) -> {
+        net.handleServer(Packets.Connect.class, (con, connect) -> {
             Events.fire(new EventType.ConnectionEvent(con));
             MongoDbPlayerIpCheck(con);
 
@@ -110,7 +108,7 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener{
             }
             kickIfBanned(con);
             if (AntiVpn.checkAddress(connect.addressTCP))
-                con.kick("[orange]You are suspected in using VPN or being a bot! Please, if its not true, report that incident on our discord: " + discordurl );
+                con.kick("[orange]You are suspected in using VPN or being a bot! Please, if its not true, report that incident on our discord: " + discordUrl);
         });
         Events.on(EventType.PlayerChatEvent.class, event ->{
             if (isVoting){
@@ -138,11 +136,12 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener{
             }
         });
         Events.on(EventType.PlayerLeave.class, event -> {
-            historyPlayers.remove(event.player.uuid());
-            Player plr = event.player;
-            PlayerData data = getPlayerData(plr.uuid());
-            Call.sendMessage(plr.name() + "[white] left " + "[grey][" + data.id + "]");
-            Log.info(plr.plainName() + " left " + "[" + data.id + "]");
+            Player player = event.player;
+            historyPlayers.remove(player.uuid());
+            PlayerData data = getPlayerData(player.uuid());
+            if (data == null) return;
+            Call.sendMessage(player.name() + "[white] left " + "[grey][" + data.id + "]");
+            Log.info(player.plainName() + " left " + "[" + data.id + "]");
         });
     }
 

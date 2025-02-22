@@ -2,11 +2,9 @@ package plugin.commands;
 
 import mindustry.gen.Player;
 import plugin.etc.Menu;
-import plugin.functions.MongoDB;
 import plugin.models.PlayerData;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static plugin.functions.MongoDB.MongoDbPlayerRankCheck;

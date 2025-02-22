@@ -1,14 +1,11 @@
 package plugin.discord;
 
-import org.bson.Document;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.Role;
 import plugin.models.PlayerData;
 
 import java.awt.*;
 import java.util.Optional;
-
-import static arc.util.Strings.stripColors;
 
 public class Embed {
 
