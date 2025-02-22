@@ -55,7 +55,6 @@ public class ConsoleCommands {
         handler.register("setvip", "<id> <true/false>", "Sets vip to player", (args, params) -> {
             PlayerData data = getPlayerDataAnyway(args[0]);
             String isVipString = args[1];
-boolean isVip = Boolean.parseBoolean(isVipString);
             if (data == null){
                 Log.warn("No such player!");
                 return;
@@ -64,6 +63,7 @@ boolean isVip = Boolean.parseBoolean(isVipString);
                 Log.warn("true or false");
                 return;
             }
+            boolean isVip = Boolean.parseBoolean(isVipString);
             data.isVip = isVip;
             MongoDbUpdate(data);
             Log.info(data.isVip == true ? "Given Vip." : "Removed Vip.");
