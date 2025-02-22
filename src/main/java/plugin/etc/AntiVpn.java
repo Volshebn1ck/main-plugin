@@ -3,10 +3,7 @@ package plugin.etc;
 import arc.struct.Seq;
 import arc.util.Http;
 import arc.util.Log;
-import arc.util.Threads;
 import arc.util.serialization.Jval;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import plugin.Plugin;
 
 import java.io.InputStream;

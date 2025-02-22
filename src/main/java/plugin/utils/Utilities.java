@@ -1,8 +1,6 @@
 package plugin.utils;
-import arc.Core;
 import arc.Events;
 import arc.struct.Seq;
-import arc.util.Reflect;
 import mindustry.Vars;
 import mindustry.game.EventType;
 import mindustry.game.Team;
@@ -11,18 +9,10 @@ import mindustry.gen.Groups;
 import mindustry.gen.Player;
 import mindustry.maps.Map;
 import mindustry.server.ServerControl;
-import org.bson.Document;
-import org.javacord.api.event.message.MessageCreateEvent;
 import plugin.models.PlayerData;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.List;
 
 import static plugin.commands.MainCommands.votedPlayer;
 import static plugin.commands.MainCommands.votes;
-import static plugin.utils.FindDocument.getPlayerData;
 
 public class Utilities {
     // finds player using their name (without colors)
@@ -54,16 +44,6 @@ public class Utilities {
             maps.add(map);
         }
         return maps;
-    }
-    public static String formatRanks(int rank){
-        switch (rank){
-            case 0: return "player";
-            case 1: return "trusted";
-            case 2: return "admin";
-            case 3: return "console";
-            case 4: return "owner";
-        }
-        return "player";
     }
 }
 

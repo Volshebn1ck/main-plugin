@@ -3,12 +3,10 @@ package plugin.commands;
 import arc.Events;
 import arc.struct.Seq;
 import arc.util.CommandHandler;
-import arc.util.Log;
 import arc.util.Strings;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Updates;
 import mindustry.Vars;
 import mindustry.game.EventType;
 import mindustry.game.Team;
@@ -16,7 +14,6 @@ import mindustry.gen.Call;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
 import mindustry.maps.Map;
-import org.bson.Document;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import plugin.models.PlayerData;
@@ -31,8 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static arc.util.Strings.canParseInt;
 import static mindustry.Vars.mods;
-import static mindustry.Vars.port;
-import static plugin.ConfigJson.discordurl;
+import static plugin.ConfigJson.discordUrl;
 import static plugin.Plugin.newCollection;
 import static plugin.Plugin.servers;
 import static plugin.commands.Menus.achMenu;
@@ -145,7 +141,7 @@ public class MainCommands {
             }), 0, 1000);
         });
         handler.<Player>register("discord", "Link to our discord!", (args,player) -> {
-            Call.openURI(player.con, discordurl);
+            Call.openURI(player.con, discordUrl);
         });
         handler.<Player>register("stats", "[player...]", "Get stats of player or yourself", (args, player) -> {
             if (args.length == 0){
