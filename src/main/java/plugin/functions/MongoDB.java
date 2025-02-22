@@ -14,8 +14,8 @@ import mindustry.net.Administration;
 import mindustry.net.NetConnection;
 import plugin.models.PlayerData;
 
-import java.util.ArrayList;
-import java.util.List;
+import plugin.etc.Ranks;
+
 import java.util.Objects;
 import java.util.Optional;
 
@@ -45,13 +45,7 @@ public class MongoDB {
         if (!Objects.equals(data.customPrefix, "<none>")){
             eventPlayer.name = data.customPrefix + " [" + "#" + eventPlayer.color.toString() + "]" + tempName;
         } else {
-            switch (data.rank) {
-                case "player" -> eventPlayer.name = "[white]<P>" +" [" + "#" + eventPlayer.color.toString() + "]" + tempName;
-                case "trusted" -> eventPlayer.name = "[blue]<T>" +" [" + "#" + eventPlayer.color.toString() + "]" + tempName;
-                case "admin" -> eventPlayer.name = "[#f]<A>" +" [" + "#" + eventPlayer.color.toString() + "]" + tempName;
-                case "console" -> eventPlayer.name = "[purple]<C>" +" [" + "#" + eventPlayer.color.toString() + "]" + tempName;
-                case "owner" -> eventPlayer.name = "[cyan]<O>" +" [" + "#" + eventPlayer.color.toString() + "]" + tempName;
-            }
+            eventPlayer.name = Ranks.getRank(data.rank).getPrefix() +" [" + "#" + eventPlayer.color.toString() + "]" + tempName;
         }
 
     }

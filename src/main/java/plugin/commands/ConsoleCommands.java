@@ -3,37 +3,25 @@ package plugin.commands;
 import arc.util.CommandHandler;
 import arc.util.Log;
 import arc.util.Timer;
-import com.mongodb.BasicDBObject;
+
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Updates;
-import mindustry.Vars;
-import mindustry.content.Items;
+
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
-import mindustry.type.Item;
-import mindustry.world.blocks.production.GenericCrafter;
-import mindustry.world.consumers.Consume;
-import org.bson.Document;
+
 import org.json.simple.parser.ParseException;
 import plugin.discord.Bot;
+import plugin.etc.Ranks;
 import plugin.models.PlayerData;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 
-import static arc.util.Strings.canParseInt;
-import static arc.util.Strings.parseInt;
 import static plugin.Plugin.newCollection;
 import static plugin.ServersConfig.resetServersConfig;
-import static plugin.etc.Ranks.ranks;
 import static plugin.functions.MongoDB.*;
 import static plugin.utils.FindDocument.getPlayerDataAnyway;
 import static plugin.utils.Utilities.findPlayerByID;
-import static plugin.utils.Utilities.formatRanks;
 
 public class ConsoleCommands {
     public static void loadServerCommands(CommandHandler handler){
@@ -46,16 +34,16 @@ public class ConsoleCommands {
         });
         handler.register("setrank", "<id> <rank>", "Sets rank to player", (args, params) -> {
             PlayerData data = getPlayerDataAnyway(args[0]);
-            String rankid = args[1];
+            String rank = args[1];
             if (data == null){
                 Log.warn("No such player!");
                 return;
             }
-            if (!Arrays.asList(ranks).contains(rankid)){
+            if (Ranks.getRank(rank) == Ranks.Rank.None){
                 Log.warn("This rank doesnt exist!");
                 return;
             }
-            data.rank = rankid;
+            data.rank = rank;
             MongoDbUpdate(data);
             Log.info("Rank has been given!");
             Player player = Groups.player.find(p -> p.uuid().equals(data.uuid));

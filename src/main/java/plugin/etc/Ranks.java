@@ -1,30 +1,50 @@
 package plugin.etc;
 
-public class Ranks{
-    public static String playerRank = "[white]Player";
-    public static String trustedRank = "[blue]Trusted";
-    public static String adminRank = "[red]Administrator";
-    public static String consoleRank = "[purple]Console";
-    public static String ownerRank = "[cyan]Owner";
-    public static String[] ranks = new String[]{"player", "trusted", "admin", "console", "owner"};
-    public static String rankName(String rankid){
-        switch (rankid){
+public class Ranks {
+    public enum Rank {
+        None("none", ""),
+        Player("[white]Player", "[white]<P>"),
+        Verified("[blue]Verified", "[blue]<V>"),
+        Moderator("[blue]Moderator", "[blue]<M>"),
+        JS("[purple]JS", "[purple]<JS>"),
+        Administrator("[#00bfff]Administrator", "[#00bfff]<A>");
+        private final String name, prefix;
+
+        Rank(String name, String prefix) {
+            this.name = name;
+            this.prefix = prefix;
+        }
+
+        public String getName() {
+            return name;
+        }
+        public String getPrefix(){
+            return prefix;
+        }
+    }
+
+    ;
+
+    public static Rank getRank(String name) {
+        switch (name.toLowerCase()) {
             case "player" -> {
-                return playerRank;
+                return Rank.Player;
             }
-            case "trusted" -> {
-                return trustedRank;
+            case "verified" -> {
+                return Rank.Verified;
             }
-            case "admin" -> {
-                return adminRank;
+            case "moderator" -> {
+                return Rank.Moderator;
             }
-            case "console" -> {
-                return consoleRank;
+            case "js" -> {
+                return Rank.JS;
             }
-            case "owner" -> {
-                return ownerRank;
+            case "administrator" -> {
+                return Rank.Administrator;
+            }
+            default -> {
+                return Rank.None;
             }
         }
-        return playerRank;
     }
 }

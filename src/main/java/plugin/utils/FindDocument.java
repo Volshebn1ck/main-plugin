@@ -2,6 +2,7 @@ package plugin.utils;
 
 import com.mongodb.client.model.Filters;
 import plugin.models.PlayerData;
+import mindustry.Vars;
 
 import java.util.regex.Pattern;
 
@@ -16,12 +17,14 @@ public class FindDocument {
         return newCollection.find(eq("_id", id)).first();
     }
     public static PlayerData getPlayerData(String uuidOrName) {
+        PlayerData data;
         try {
             Pattern pattern = Pattern.compile(".?" + uuidOrName + ".?", Pattern.CASE_INSENSITIVE);
-            return notNullElse(newCollection.find(Filters.eq("uuid", uuidOrName)).first(), newCollection.find(Filters.regex("name", pattern)).first());
+            data = notNullElse(newCollection.find(Filters.eq("uuid", uuidOrName)).first(), newCollection.find(Filters.regex("name", pattern)).first());
         } catch (Exception e) {
-            return notNullElse(newCollection.find(Filters.eq("uuid", uuidOrName)).first(), newCollection.find(Filters.eq("name", uuidOrName)).first());
-        }
+            data = notNullElse(newCollection.find(Filters.eq("uuid", uuidOrName)).first(), newCollection.find(Filters.eq("name", uuidOrName)).first());
+        } // вот сюда потом проверочку на null
+        return data;
     }
     public static PlayerData getPlayerDataByIP(String ip){
         return newCollection.find(eq("ip", ip)).first();

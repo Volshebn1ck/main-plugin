@@ -1,7 +1,5 @@
 package plugin.models;
 
-import org.bson.codecs.pojo.annotations.BsonCreator;
-
 import java.util.ArrayList;
 public class PlayerData {
     public String uuid;
