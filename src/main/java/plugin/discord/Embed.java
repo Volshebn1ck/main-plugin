@@ -15,9 +15,12 @@ public class Embed {
             .setColor(Color.RED)
             .addField("**ID**", String.valueOf(data.id))
             .addField("**Name**", data.name)
+            .addField("**UUID**", data.uuid)
+            .addField("**IP**", data.ip)
             .addField("**Reason**", reason)
             .addField("**Expires**", "<t:" + banTime/1000 +":D>")
             .addField("**Moderator**", moderator);
+            
 }
     public static EmbedBuilder noRoleEmbed(Optional<Role> role){
         return new EmbedBuilder()
