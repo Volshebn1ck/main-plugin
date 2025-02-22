@@ -98,7 +98,7 @@ public class MainCommands {
             int mapsPerPage = 10;
             Seq<Map> maps = getMaps();
             maps.list().stream().skip(page*10L).limit(mapsPerPage + (page * 10L)).forEach(
-                    map -> list.append(map.name() + "[white], by " + map.author + "\n"())
+                    map -> list.append(map.name() + "[white], by " + map.author() + "\n")
             );
             if (!String.valueOf(list).contains("by")){
                 player.sendMessage("[red]No maps detected!");
