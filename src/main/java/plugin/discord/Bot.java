@@ -138,9 +138,9 @@ public class Bot {
                 String response = "```" +
                         "Player -> Basic rank that given to all players on our server\n" +
                          "Trused -> In order to get it you should connect your mindustry account to discord using /login\n" +
-                        "Administrator -> Administrator of our servers.\n" +
-                        "Console -> People that have access to game console and javascript execution\n" +
-                        "Owner -> Rank of owner, has access to everything" +
+                        "Moderator (moderator) -> Moderator of our servers.\n" +
+                        "JavaScript (js) -> People that have access to game console and javascript execution\n" +
+                        "Administrator (administrator) -> Rank of head admins, has access to everything" +
                         "```";
                 listener.getChannel().sendMessage(response);
             }
