@@ -115,7 +115,7 @@ public class MainCommands {
                 player.sendMessage("Vote is already running!");
                 return;
             }
-            Map choosedMap = Vars.maps.customMaps().find(map -> map.name().contains(args[0]));
+            Map choosedMap = Vars.maps.customMaps().find(map -> Strings.stripColors(map.name()).contains(args[0]));
             if (choosedMap == null){
                 player.sendMessage("Could not find that map!");
                 return;
