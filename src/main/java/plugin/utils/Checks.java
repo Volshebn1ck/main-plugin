@@ -27,10 +27,10 @@ public class Checks {
     }
     public static boolean isVipOrOwner(int id){
         PlayerData data = getPlayerData(id);
-        return Objects.equals(data.rank, "owner") || data.isVip;
+        return Objects.equals(data.rank, "administrator") || data.isVip;
     }
     public static boolean isVipOrOwner(String uuid){
         PlayerData data = getPlayerData(uuid);
-        return Objects.equals(data.rank, "owner") || data.isVip;
+        return Objects.equals(data.rank, "administrator") || data.isVip;
     }
 }
