@@ -7,9 +7,6 @@ import arc.util.Timer;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
 
-import mindustry.gen.Groups;
-import mindustry.gen.Player;
-
 import org.json.simple.parser.ParseException;
 import plugin.discord.Bot;
 import plugin.etc.Ranks;
@@ -21,7 +18,6 @@ import static plugin.Plugin.newCollection;
 import static plugin.ServersConfig.resetServersConfig;
 import static plugin.functions.MongoDB.*;
 import static plugin.utils.FindDocument.getPlayerDataAnyway;
-import static plugin.utils.Utilities.findPlayerByID;
 
 public class ConsoleCommands {
     public static void loadServerCommands(CommandHandler handler){
@@ -46,11 +42,6 @@ public class ConsoleCommands {
             data.rank = rank;
             MongoDbUpdate(data);
             Log.info("Rank has been given!");
-            Player player = Groups.player.find(p -> p.uuid().equals(data.uuid));
-            if (player == null){
-                return;
-            }
-            MongoDbPlayerRankCheck(data.uuid);
         });
         handler.register("setvip", "<id> <true/false>", "Sets vip to player", (args, params) -> {
             PlayerData data = getPlayerDataAnyway(args[0]);
@@ -63,15 +54,9 @@ public class ConsoleCommands {
                 Log.warn("true or false");
                 return;
             }
-            boolean isVip = Boolean.parseBoolean(isVipString);
-            data.isVip = isVip;
+            data.isVip = Boolean.parseBoolean(isVipString);
             MongoDbUpdate(data);
-            Log.info(data.isVip == true ? "Given Vip." : "Removed Vip.");
-            Player player = Groups.player.find(p -> p.uuid().equals(data.uuid));
-            if (player == null){
-                return;
-            }
-            MongoDbPlayerRankCheck(data.uuid);
+            Log.info(data.isVip ? "Given Vip." : "Removed Vip.");
         });
         handler.register("check", "Checks mongodb", (args, params) -> {
             MongoDbCheck();
@@ -116,7 +101,6 @@ public class ConsoleCommands {
                     if (!csr.achievements.contains(activeAch)) {
                         csr.achievements.add(activeAch);
                         MongoDbUpdate(csr);
-                        MongoDbPlayerRankCheck(findPlayerByID(csr.id).uuid());
                     }
                 }
             }
@@ -127,7 +111,6 @@ public class ConsoleCommands {
                     if (!csr.achievements.contains(activeAch)) {
                         csr.achievements.add(activeAch);
                         MongoDbUpdate(csr);
-                        MongoDbPlayerRankCheck(findPlayerByID(csr.id).uuid());
                     }
                 }
             }
