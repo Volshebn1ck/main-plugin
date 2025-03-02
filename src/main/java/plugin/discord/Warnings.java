@@ -7,6 +7,6 @@ public class Warnings {
         listener.getChannel().sendMessage("Map not found!");
     }
     public static void noDataFound(MessageCreateEvent listener){
-        listener.getChannel().sendMessage("No PlayerData found!");
+        listener.getChannel().sendMessage("No PlayerDataCollection found!");
     }
 }

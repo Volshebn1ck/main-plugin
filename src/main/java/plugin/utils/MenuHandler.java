@@ -3,11 +3,10 @@ package plugin.utils;
 import mindustry.gen.Call;
 import mindustry.ui.Menus;
 import org.javacord.api.event.message.MessageCreateEvent;
+import plugin.etc.Ranks;
 import plugin.models.PlayerData;
 
 import static plugin.ConfigJson.discordUrl;
-import static plugin.functions.MongoDB.MongoDbUpdate;
-import static plugin.utils.FindDocument.getPlayerData;
 
 
 public class MenuHandler {
@@ -33,14 +32,10 @@ public class MenuHandler {
                 }
                 case 0 -> {
                     long discordId = listener.getMessageAuthor().getId();
-                    PlayerData data = getPlayerData(player.uuid());
-                    if (data.rank.equals("player")) {
-                        data.discordId = discordId;
-                        data.rank = "trusted";
-                    } else {
-                        data.discordId = discordId;
-                    }
-                    MongoDbUpdate(data);
+                    PlayerData data = new PlayerData(player);
+                    if (data.getRank() == Ranks.Rank.Player)
+                        data.setRank(Ranks.Rank.Verified);
+                    data.setDiscordId(discordId);
                     player.sendMessage("[blue]Successfully connected your discord: " + listener.getMessageAuthor().getName());
                     listener.getChannel().sendMessage("Successfully connected your mindustry account!");
                 }

@@ -3,7 +3,6 @@ package plugin.commands;
 import arc.Events;
 import arc.util.Log;
 import arc.util.Strings;
-import com.mongodb.client.model.Filters;
 import mindustry.game.EventType.AdminRequestEvent;
 import mindustry.game.Team;
 import mindustry.gen.AdminRequestCallPacket;
@@ -26,9 +25,7 @@ import java.util.concurrent.TimeUnit;
 import static mindustry.Vars.logic;
 import static mindustry.Vars.net;
 import static plugin.ConfigJson.discordUrl;
-import static plugin.Plugin.newCollection;
 import static plugin.discord.Embed.banEmbed;
-import static plugin.functions.MongoDB.MongoDbUpdate;
 
 public class BanMenu {
 
@@ -115,15 +112,14 @@ public class BanMenu {
             input.result((view, text) -> {
                 var target = view.state.get(TARGET);
                 long duration = view.state.get(DURATION);
-                PlayerData data = newCollection.find(Filters.eq("uuid", target.uuid())).first();
+                PlayerData data = new PlayerData(target.uuid());
                 Date date = new Date();
                 long banTime = date.getTime() + TimeUnit.DAYS.toMillis(duration);
                 String timeUntilUnban = Bundle.formatDuration(Duration.ofDays(duration));
-                target.con.kick("[red]You have been banned!\n\n" + "[white]Reason: " + text +"\nDuration: " + timeUntilUnban + " until unban\nIf you think this is a mistake, make sure to appeal ban in our discord: " + discordUrl, 0);
+                target.con.kick("[red]You have been banned!\n\n" + "[white]Reason: " + text + "\nDuration: " + timeUntilUnban + " until unban\nIf you think this is a mistake, make sure to appeal ban in our discord: " + discordUrl, 0);
                 Call.sendMessage(target.plainName() + " has been banned for: " + text);
-                data.lastBan = banTime;
-                MongoDbUpdate(data);
-                Bot.banchannel.sendMessage(banEmbed(data,text,banTime, view.player.plainName()));
+                data.setLastBanTime(banTime);
+                Bot.banchannel.sendMessage(banEmbed(data, text, banTime, view.player.plainName()));
             });
         });
     }

@@ -17,11 +17,12 @@ public class ServersConfig {
             if (!config.exists()) {
                 FileWriter writer = new FileWriter(Vars.dataDirectory.absolutePath() + "/" + "serversConfig.json");
                 writer.write(
-                    "{\n" +
-                            "\t\"servers\": [\n" +
-                              "\t\t{ \"servername\":\"testserver\", \"ip\":\"0.0.0.0\", \"port\":6969 }\n" +
-                             "\t]\n" +
-                        "}"
+                        """
+                                {
+                                \t"servers": [
+                                \t\t{ "servername":"testserver", "ip":"0.0.0.0", "port":6969 }
+                                \t]
+                                }"""
                         );
                 writer.close();
             }
@@ -31,11 +32,12 @@ public class ServersConfig {
         FileWriter writer = new FileWriter(Vars.dataDirectory.absolutePath() + "/" + "serversConfig.json");
         writer.flush();
         writer.write(
-                "{\n" +
-                            "\t\"servers\": [\n" +
-                            "\t\t{ \"servername\":\"testserver\", \"ip\":\"0.0.0.0\", \"port\":6969 }\n" +
-                            "\t]\n" +
-                        "}"
+                """
+                        {
+                        \t"servers": [
+                        \t\t{ "servername":"testserver", "ip":"0.0.0.0", "port":6969 }
+                        \t]
+                        }"""
         );writer.close();
         Log.warn("Config resetted!");
     }

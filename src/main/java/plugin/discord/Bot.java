@@ -6,8 +6,6 @@ import arc.util.CommandHandler;
 import arc.util.Http;
 import arc.util.Log;
 import arc.util.Timer;
-import com.mongodb.client.MongoCursor;
-import com.mongodb.client.model.Filters;
 import mindustry.Vars;
 import mindustry.game.EventType;
 import mindustry.game.Team;
@@ -32,22 +30,18 @@ import java.time.Duration;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 import static arc.util.Strings.*;
 import static mindustry.Vars.mods;
 import static mindustry.Vars.netServer;
 import static plugin.ConfigJson.discordUrl;
-import static plugin.Plugin.newCollection;
 import static plugin.discord.DiscordFunctions.*;
 import static plugin.discord.Embed.banEmbed;
 import static plugin.discord.Warnings.noDataFound;
 import static plugin.etc.Ranks.Rank;
 import static plugin.etc.Ranks.getRank;
-import static plugin.functions.MongoDB.MongoDbUpdate;
 import static plugin.functions.Other.*;
-import static plugin.utils.FindDocument.getPlayerData;
-import static plugin.utils.FindDocument.getPlayerDataAnyway;
+
 import static plugin.utils.MenuHandler.loginMenu;
 import static plugin.utils.MenuHandler.loginMenuFunction;
 import static plugin.utils.Utilities.findPlayerByName;
@@ -59,43 +53,40 @@ public class Bot {
     public static TextChannel channel;
     public static TextChannel banchannel;
     public static String prefix = ConfigJson.prefix;
+
     // main bot
-    public static void load(){
-        api =  new DiscordApiBuilder()
-                .setToken(ConfigJson.token)
-                .addIntents(Intent.GUILDS, Intent.MESSAGE_CONTENT, Intent.GUILD_MESSAGES)
-                .login()
-                .join();
+    public static void load() {
+        api = new DiscordApiBuilder().setToken(ConfigJson.token).addIntents(Intent.GUILDS, Intent.MESSAGE_CONTENT, Intent.GUILD_MESSAGES).login().join();
         api.addMessageCreateListener(Bot::onMessageCreate);
-/*        api.addSlashCommandCreateListener(Bot::addSlashCommandListener);*/
         channel = api.getChannelById(ConfigJson.logChannelId).get().asTextChannel().get();
         banchannel = api.getChannelById(ConfigJson.banLogChannelId).get().asTextChannel().get();
-/*        registerSlashCommands();*/
         init();
     }
+
     // the stuff that logs if bot is started and also some random events
-    public static void init(){
+    public static void init() {
         Log.info("Bot started");
-        Events.on(EventType.PlayerChatEvent.class, event  -> {
+        Events.on(EventType.PlayerChatEvent.class, event -> {
             if (event.message.startsWith("/")) {
                 return;
             }
             channel.sendMessage("`" + event.player.plainName() + ": " + event.message + "`");
         });
-        Events.on(EventType.PlayerJoin.class, event ->
-                Timer.schedule(() -> {
-            PlayerData data = getPlayerData(event.player.uuid());
-            if (data != null) {
-                channel.sendMessage("`" + event.player.plainName() + " (" + data.id + ")" + " joined the server!" + "`");
+
+        Events.on(EventType.PlayerJoin.class, event -> Timer.schedule(() -> {
+            PlayerData data = new PlayerData(event.player);
+            if (data.isExist()) {
+                channel.sendMessage("`" + event.player.plainName() + " (" + data.getId() + ")" + " joined the server!" + "`");
             }
         }, 0.2f));
-        Events.on(EventType.PlayerLeave.class, event ->
-                Timer.schedule(() -> {
-                    PlayerData user = getPlayerData(event.player.uuid());
-            channel.sendMessage("`" + event.player.plainName()  + " ("+ user.id + ")" +" left the server!" + "`");
+
+        Events.on(EventType.PlayerLeave.class, event -> Timer.schedule(() -> {
+            PlayerData data = new PlayerData(event.player);
+            channel.sendMessage("`" + event.player.plainName() + " (" + data.getId() + ")" + " left the server!" + "`");
         }, 0.2f));
     }
-     // creating listener once message is created
+
+    // creating listener once message is created
     private static void onMessageCreate(MessageCreateEvent listener) {
         /*if(!state.is(GameState.State.playing)){
             listener.getChannel().sendMessage("Server is not running");
@@ -105,83 +96,57 @@ public class Bot {
             listener.getChannel().sendMessage("Cant use commands in DM's");
             return;
         }*/
-        if (listener.getChannel() == channel && listener.getMessageAuthor().isRegularUser()){
+        if (listener.getChannel() == channel && listener.getMessageAuthor().isRegularUser()) {
             Call.sendMessage("[blue][" + listener.getMessageAuthor().getDisplayName() + "[blue]]: [white]" + listener.getMessageContent());
         }
-        if(listener.getMessageAuthor().isBotUser()){
+        if (listener.getMessageAuthor().isBotUser()) {
             return;
         }
-        if(!listener.getMessageContent().contains(prefix)){
+        if (!listener.getMessageContent().contains(prefix)) {
             return;
         }
-        switch(listener.getMessageContent().split(" ")[0].replace(prefix, "")){
+        switch (listener.getMessageContent().split(" ")[0].replace(prefix, "")) {
             case "help" -> {
-                String response = "```" +
-                        prefix + "stats <playerIdOrName...> -> get statistics about player\n" +
-                        prefix + "list -> list all active players on server\n" +
-                        prefix + "ban <playerIdOrNameOrUUID> <days> <reason...> -> bans the player\n" +
-                        prefix + "unban <playerIdOrNameOrUUID...> -> unbans the player\n" +
-                        prefix + "js <code...> -> executes code\n" +
-                        prefix + "gameover -> executes gameover\n" +
-                        prefix + "adminadd <playerName...> -> gives admin to player\n" +
-                        prefix + "login <playerIdOrName...> -> connects discord account and mindustry account\n" +
-                        prefix + "search <playerName...> -> search players using their name\n" +
-                        prefix + "ranks -> get all ranks on server\n" +
-                        "```";
+                String response = "```" + prefix + "stats <playerIdOrName...> -> get statistics about player\n" + prefix + "list -> list all active players on server\n" + prefix + "ban <playerIdOrNameOrUUID> <days> <reason...> -> bans the player\n" + prefix + "unban <playerIdOrNameOrUUID...> -> unbans the player\n" + prefix + "js <code...> -> executes code\n" + prefix + "gameover -> executes gameover\n" + prefix + "adminadd <playerName...> -> gives admin to player\n" + prefix + "login <playerIdOrName...> -> connects discord account and mindustry account\n" + prefix + "search <playerName...> -> search players using their name\n" + prefix + "ranks -> get all ranks on server\n" + "```";
                 listener.getChannel().sendMessage(response);
             }
             case "ranks" -> {
-                String response = "```" +
-                        "Player -> Basic rank that given to all players on our server\n" +
-                        "Verified -> In order to get it you should connect your mindustry account to discord using /login\n" +
-                        "Administrator -> Administrator of our servers.\n" +
-                        "Console -> People that have access to game console and javascript execution\n" +
-                        "Owner -> Rank of owner, has access to everything" +
-                        "```";
+                String response = "```" + "PlayerData -> Basic rank that given to all players on our server\n" + "Verified -> In order to get it you should connect your mindustry account to discord using /login\n" + "Administrator -> Administrator of our servers.\n" + "Console -> People that have access to game console and javascript execution\n" + "Owner -> Rank of owner, has access to everything" + "```";
                 listener.getChannel().sendMessage(response);
             }
             case "hi" -> {
-                if (!inBounds(listener.getMessageContent().split(" "), 1)){
-                    listener.getChannel().sendMessage("Not enough arguments!"); return;
+                if (notInBounds(listener.getMessageContent().split(" "), 1)) {
+                    listener.getChannel().sendMessage("Not enough arguments!");
+                    return;
                 }
                 String arg = readValueFromArraySeparated(listener.getMessageContent().split(" "), 1, listener.getMessageContent().split(" ").length);
                 listener.getChannel().sendMessage("Hi! " + arg);
             }
             case "stats" -> {
-                if (!inBounds(listener.getMessageContent().split(" "), 1)){
-                    listener.getChannel().sendMessage("Not enough arguments!"); return;
-                }
-                String id = readValueFromArraySeparated(listener.getMessageContent().split(" "), 1, listener.getMessageContent().split(" ").length);
-                PlayerData data = getPlayerDataAnyway(id);
-                if (data == null){
-                    listener.getChannel().sendMessage("Could not find that player!");
+                if (notInBounds(listener.getMessageContent().split(" "), 1)) {
+                    listener.getChannel().sendMessage("Not enough arguments!");
                     return;
                 }
-                long playtime = data.playtime;
-                String discordId = String.valueOf(data.discordId);
-                if (discordId.equals("0")){
-                    discordId = "none";
+                String id = readValueFromArraySeparated(listener.getMessageContent().split(" "), 1, listener.getMessageContent().split(" ").length);
+                PlayerData data = new PlayerData(Integer.parseInt(id));
+                if (data.isNotExist()) {
+                    listener.getChannel().sendMessage("Could not find that player!");
+                } else {
+                    long playtime = data.getPlaytime();
+                    EmbedBuilder embed = new EmbedBuilder().setTitle("Information").setColor(Color.RED).addField("Name", stripColors(data.getNames().toString())).addField("ID", String.valueOf(data.getId())).addField("Rank", data.getRank().getName()).addField("Achievements", data.getAchievements().toString()).addField("Playtime", Bundle.formatDuration(Duration.ofMinutes(playtime)));
+                    if (data.getDiscordId() != 0) {
+                        embed.addField("Discord", "<@" + data.getDiscordId() + ">");
+                    }
+                    listener.getChannel().sendMessage(embed);
                 }
-                EmbedBuilder embed = new EmbedBuilder()
-                        .setTitle("Information")
-                        .setColor(Color.RED)
-                        .addField("Name", stripColors(data.name))
-                        .addField("ID", String.valueOf(data.id))
-                        .addField("Rank", data.rank)
-                        .addField("Achievements", data.achievements.toString())
-                        .addField("Playtime",  Bundle.formatDuration(Duration.ofMinutes(playtime)));
-                        if (discordId != "none"){
-                            embed.addField("Discord", "<@" +discordId +">");
-                        }
-                listener.getChannel().sendMessage(embed);
             }
             case "list" -> {
                 StringBuilder list = new StringBuilder();
                 list.append("```Players online: ").append(Groups.player.size()).append("\n\n");
-                for (Player player : Groups.player){
-                    PlayerData user = getPlayerData(player.uuid());
-                    int id = user.id;
-                    if (player.admin()){
+                for (Player player : Groups.player) {
+                    PlayerData data = new PlayerData(player);
+                    int id = data.getId();
+                    if (player.admin()) {
                         list.append("# [A] ").append(player.plainName()).append("; ID: ").append(id).append("\n");
                     } else {
                         list.append("# ").append(player.plainName()).append("; ID: ").append(id).append("\n");
@@ -191,10 +156,11 @@ public class Bot {
                 listener.getChannel().sendMessage(String.valueOf(list));
             }
             case "ban" -> {
-                if (!inBounds(listener.getMessageContent().split(" "), 3)){
-                    listener.getChannel().sendMessage("Not enough arguments!"); return;
+                if (notInBounds(listener.getMessageContent().split(" "), 3)) {
+                    listener.getChannel().sendMessage("Not enough arguments!");
+                    return;
                 }
-                if (!isModerator(listener)){
+                if (!isModerator(listener)) {
                     return;
                 }
 
@@ -202,144 +168,141 @@ public class Bot {
 
                 String id = listener.getMessageContent().split(" ")[1];
                 String reason = readValueFromArraySeparated(listener.getMessageContent().split(" "), 3, listener.getMessageContent().split(" ").length);
-                if (!canParseInt(listener.getMessageContent().split(" ")[2])){
+                if (!canParseInt(listener.getMessageContent().split(" ")[2])) {
                     listener.getChannel().sendMessage("Please, type a number in time!");
                 }
                 long time = Long.parseLong(listener.getMessageContent().split(" ")[2]);
                 Date date = new Date();
                 long banTime = date.getTime() + TimeUnit.DAYS.toMillis(time);
                 String timeUntilUnban = Bundle.formatDuration(Duration.ofDays(time));
-                PlayerData data= getPlayerDataAnyway(id);
-                if (data == null) {
+                PlayerData data;
+                if (canParseInt(id)) data = new PlayerData(Integer.parseInt(id));
+                else data = new PlayerData(id);
+                if (data.isNotExist()) {
                     response = "Could not find that player.";
                     listener.getChannel().sendMessage(response);
                     return;
                 }
-                Player plr = Groups.player.find(p -> p.uuid().equals(data.uuid));
+                Player plr = Groups.player.find(p -> p.uuid().equals(data.getUuid()));
                 if (plr == null) {
-                    Log.info("Player is offline, not kicking him");
+                    Log.info("PlayerData is offline, not kicking him");
                 } else {
                     plr.con.kick("[red]You have been banned!\n\n" + "[white]Reason: " + reason + "\nDuration: " + timeUntilUnban + " until unban\nIf you think this is a mistake, make sure to appeal ban in our discord: " + discordUrl, 0);
                 }
-                listener.getChannel().sendMessage("Banned: " + data.name);
+                listener.getChannel().sendMessage("Banned: " + data.getLastName());
 
-                Call.sendMessage(data.name + " has been banned for: " + reason);
-                data.lastBan = banTime;
-                MongoDbUpdate(data);
+                Call.sendMessage(data.getLastName() + " has been banned for: " + reason);
+                data.setLastBanTime(banTime);
                 Bot.banchannel.sendMessage(banEmbed(data, reason, banTime, listener.getMessageAuthor().getName()));
             }
             case "adminadd" -> {
-                if (!inBounds(listener.getMessageContent().split(" "), 1)){
-                    listener.getChannel().sendMessage("Not enough arguments!"); return;
+                if (notInBounds(listener.getMessageContent().split(" "), 1)) {
+                    listener.getChannel().sendMessage("Not enough arguments!");
+                    return;
                 }
-                if (!isModerator(listener)){
+                if (!isModerator(listener)) {
                     return;
                 }
                 String name = readValueFromArraySeparated(listener.getMessageContent().split(" "), 1, listener.getMessageContent().split(" ").length);
                 Player player = findPlayerByName(name);
-                if (player == null){
-                    listener.getChannel().sendMessage("Could not find that player!"); return;
+                if (player == null) {
+                    listener.getChannel().sendMessage("Could not find that player!");
+                    return;
                 }
-                if (player.admin()){
-                    listener.getChannel().sendMessage("Player is already admin!"); return;
+                if (player.admin()) {
+                    listener.getChannel().sendMessage("PlayerData is already admin!");
+                    return;
                 }
                 netServer.admins.adminPlayer(String.valueOf(player.uuid()), player.usid());
                 player.admin = true;
                 listener.getChannel().sendMessage("Successfully admin: " + player.plainName());
             }
             case "setrank" -> {
-                if (!inBounds(listener.getMessageContent().split(" "), 2)){
-                    listener.getChannel().sendMessage("Not enough arguments!"); return;
-                }
-                if (!isAdmin(listener)){
+                if (notInBounds(listener.getMessageContent().split(" "), 2)) {
+                    listener.getChannel().sendMessage("Not enough arguments!");
                     return;
                 }
-                PlayerData data = getPlayerDataAnyway(listener.getMessageContent().split(" ")[1]);
+                if (!isAdmin(listener)) {
+                    return;
+                }
+                PlayerData data = new PlayerData(Integer.parseInt(listener.getMessageContent().split(" ")[1]));
                 String rank = listener.getMessageContent().split(" ")[2];
-                if (data == null){
+                if (data.isNotExist()) {
                     listener.getChannel().sendMessage("No such player!");
-                    return;
-                }
-                if (getRank(rank) == Rank.None){
+                } else if (getRank(rank) == Rank.None) {
                     listener.getChannel().sendMessage("This rank doesnt exist!");
-                    return;
-                }
-                data.rank = rank;
-                MongoDbUpdate(data);
-                listener.getChannel().sendMessage("Rank has been given!");
-                Player player = Groups.player.find(p -> p.uuid().equals(data.uuid));
-                if (player == null){
-                    return;
+                } else {
+                    data.setRank(rank);
+                    listener.getChannel().sendMessage("Rank has been given!");
                 }
             }
             case "gameover" -> {
-                if (!isModerator(listener)){
+                if (!isModerator(listener)) {
                     return;
                 }
                 Events.fire(new EventType.GameOverEvent(Team.derelict));
                 listener.getChannel().sendMessage("Gameover executed!");
             }
             case "login" -> {
-                if (!inBounds(listener.getMessageContent().split(" "), 1)){
-                    listener.getChannel().sendMessage("Not enough arguments!"); return;
+                if (notInBounds(listener.getMessageContent().split(" "), 1)) {
+                    listener.getChannel().sendMessage("Not enough arguments!");
+                    return;
                 }
                 String id = readValueFromArraySeparated(listener.getMessageContent().split(" "), 1, listener.getMessageContent().split(" ").length);
-                PlayerData data = getPlayerDataAnyway(id);
-                if (data == null){
+                PlayerData data = new PlayerData(Integer.parseInt(id));
+                if (data.isNotExist()) {
                     listener.getChannel().sendMessage("This player doesnt exist!");
-                    return;
-                }
-                Player player = Groups.player.find(p -> p.uuid().equals(data.uuid));
-                if (player == null){
-                    listener.getChannel().sendMessage("This player is offline!");
-                    return;
-                }
-                loginMenuFunction(listener);
-                Call.menu(player.con, loginMenu, "Request", listener.getMessageAuthor().getName() + " requests to connect your mindustry account", new String[][]{{"Connect"}, {"Cancel"}});
-                listener.getChannel().sendMessage("request has been sent");
-            }
-            case "search" -> {
-                if (!inBounds(listener.getMessageContent().split(" "), 1)){
-                    listener.getChannel().sendMessage("Not enough arguments!"); return;
-                }
-                String name= readValueFromArraySeparated(listener.getMessageContent().split(" "), 1, listener.getMessageContent().split(" ").length);
-
-                StringBuilder list = new StringBuilder();
-                Pattern pattern = Pattern.compile(".?" +name + ".?", Pattern.CASE_INSENSITIVE);
-                list.append("```Results:\n\n");
-                try (MongoCursor<PlayerData> cursor = newCollection.find(Filters.regex("name", pattern)).limit(25).iterator()) {
-                    while (cursor.hasNext()) {
-                        PlayerData csr = cursor.next();
-                        list.append(csr.name).append("; ID: ").append(csr.id).append("\n");
+                } else {
+                    Player player = Groups.player.find(p -> p.uuid().equals(data.getUuid()));
+                    if (player == null) {
+                        listener.getChannel().sendMessage("This player is offline!");
+                    } else {
+                        loginMenuFunction(listener);
+                        Call.menu(player.con, loginMenu, "Request", listener.getMessageAuthor().getName() + " requests to connect your mindustry account", new String[][]{{"Connect"}, {"Cancel"}});
+                        listener.getChannel().sendMessage("request has been sent");
                     }
                 }
-                list.append("```");
-                listener.getChannel().sendMessage(String.valueOf(list));
+            }
+            case "search" -> {
+                if (notInBounds(listener.getMessageContent().split(" "), 1)) {
+                    listener.getChannel().sendMessage("Not enough arguments!");
+                    return;
+                }
+                String name = readValueFromArraySeparated(listener.getMessageContent().split(" "), 1, listener.getMessageContent().split(" ").length);
+
+                StringBuilder output = new StringBuilder();
+
+                output.append("```Results:\n\n");
+                for (PlayerData data : PlayerData.findByName(name))
+                    output.append(data.getLastName()).append("; ID: ").append(data.getId()).append("\n");
+                output.append("```");
+                listener.getChannel().sendMessage(String.valueOf(output));
             }
             case "unban" -> {
-                if (!inBounds(listener.getMessageContent().split(" "), 1)){
-                    listener.getChannel().sendMessage("Not enough arguments!"); return;
+                if (notInBounds(listener.getMessageContent().split(" "), 1)) {
+                    listener.getChannel().sendMessage("Not enough arguments!");
+                    return;
                 }
-                if (!isModerator(listener)){
+                if (!isModerator(listener)) {
                     return;
                 }
                 String id = readValueFromArraySeparated(listener.getMessageContent().split(" "), 1, listener.getMessageContent().split(" ").length);
-                PlayerData data = getPlayerDataAnyway(id);
-                if (data == null){
-                    listener.getChannel().sendMessage("Could not find that player!"); return;
+                PlayerData data = new PlayerData(Integer.parseInt(id));
+                if (data.isNotExist()) {
+                    listener.getChannel().sendMessage("Could not find that player!");
+                } else if (data.getLastBanTime() == 0L) {
+                    listener.getChannel().sendMessage("User is not banned!");
+                } else {
+                    data.setLastBanTime(0L);
+                    listener.getChannel().sendMessage(data.getLastName() + " has been unbanned!");
                 }
-                if (data.lastBan == 0L){
-                    listener.getChannel().sendMessage("User is not banned!"); return;
-                }
-                data.lastBan = 0L;
-                MongoDbUpdate(data);
-                listener.getChannel().sendMessage(data.name + " has been unbanned!");
             }
             case "js" -> {
-                if (!inBounds(listener.getMessageContent().split(" "), 1)){
-                    listener.getChannel().sendMessage("Not enough arguments!"); return;
+                if (notInBounds(listener.getMessageContent().split(" "), 1)) {
+                    listener.getChannel().sendMessage("Not enough arguments!");
+                    return;
                 }
-                if (!isAdmin(listener)){
+                if (!isAdmin(listener)) {
                     return;
                 }
                 String cmd = readValueFromArraySeparated(listener.getMessageContent().split(" "), 1, listener.getMessageContent().split(" ").length);
@@ -349,78 +312,70 @@ public class Bot {
                 });
             }
             case "exit" -> {
-                if (!isAdmin(listener)){
+                if (!isAdmin(listener)) {
                     return;
                 }
                 api.disconnect();
-                Timer.schedule(()-> {
+                Timer.schedule(() -> {
                     System.exit(0);
                 }, 1f);
             }
             case "giveach" -> {
-                if (!isAdmin(listener)){
+                if (!isAdmin(listener)) {
                     return;
                 }
-                if (!inBounds(listener.getMessageContent().split(" "), 2)){
-                    listener.getChannel().sendMessage("Not enough arguments!"); return;
+                if (notInBounds(listener.getMessageContent().split(" "), 2)) {
+                    listener.getChannel().sendMessage("Not enough arguments!");
+                    return;
                 }
                 String id = listener.getMessageContent().split(" ")[1];
-                PlayerData data = getPlayerDataAnyway(id);
-                if (data == null) {
+                PlayerData data = new PlayerData(Integer.parseInt(id));
+                if (data.isExist()) {
                     noDataFound(listener);
-                    return;
+                } else {
+                    String achName = readValueFromArraySeparated(listener.getMessageContent().split(" "), 2, listener.getMessageContent().split(" ").length);
+                    data.addAchievement(achName);
                 }
-                String achName = readValueFromArraySeparated(listener.getMessageContent().split(" "), 2, listener.getMessageContent().split(" ").length);
-                java.util.List<String> yes = data.achievements;
-                ArrayList<String> newArray = new ArrayList<>(yes);
-                newArray.add(achName);
-                data.achievements = newArray;
-                MongoDbUpdate(data);
             }
             case "removeach" -> {
-                if (!isAdmin(listener)){
+                if (!isAdmin(listener)) {
                     return;
                 }
-                if (!inBounds(listener.getMessageContent().split(" "), 2)){
-                    listener.getChannel().sendMessage("Not enough arguments!"); return;
+                if (notInBounds(listener.getMessageContent().split(" "), 2)) {
+                    listener.getChannel().sendMessage("Not enough arguments!");
+                    return;
                 }
                 String id = listener.getMessageContent().split(" ")[1];
-                PlayerData data = getPlayerDataAnyway(id);
-                if (data == null) {
+                PlayerData data = new PlayerData(Integer.parseInt(id));
+                if (data.isNotExist()) {
                     noDataFound(listener);
-                    return;
+                } else {
+                    String achName = readValueFromArraySeparated(listener.getMessageContent().split(" "), 2, listener.getMessageContent().split(" ").length);
+                    data.removeAchievement(achName);
                 }
-                String achName = readValueFromArraySeparated(listener.getMessageContent().split(" "), 2,  listener.getMessageContent().split(" ").length);
-                java.util.List<String> yes = data.achievements;
-                ArrayList<String> newArray = new ArrayList<>(yes);
-                newArray.remove(achName);
-                data.achievements = newArray;
-                MongoDbUpdate(data);
             }
             case "addmap" -> {
                 if (!isAdmin(listener)) return;
-               List<MessageAttachment> atcs = listener.getMessage().getAttachments();
-               atcs.forEach(messageAttachment ->
-                       Http.get(String.valueOf(messageAttachment.getUrl()), response -> {
-                           var file = Vars.customMapDirectory.child(messageAttachment.getFileName());
-                           file.writeBytes(response.getResult());
-                           listener.getChannel().sendMessage("Success!");
-                       })
-                       );
+                List<MessageAttachment> atcs = listener.getMessage().getAttachments();
+                atcs.forEach(messageAttachment -> Http.get(String.valueOf(messageAttachment.getUrl()), response -> {
+                    var file = Vars.customMapDirectory.child(messageAttachment.getFileName());
+                    file.writeBytes(response.getResult());
+                    listener.getChannel().sendMessage("Success!");
+                }));
                 reloadMaps();
             }
             case "removemap" -> {
                 if (!isAdmin(listener)) return;
                 if (!(listener.getMessageContent().split(" ").length >= 2)) return;
-                String name = readValueFromArraySeparated(listener.getMessageContent().split(" ") ,1, listener.getMessageContent().split(" ").length);
+                String name = readValueFromArraySeparated(listener.getMessageContent().split(" "), 1, listener.getMessageContent().split(" ").length);
                 File dir = new File(Vars.customMapDirectory.absolutePath());
                 File file = Arrays.stream(Objects.requireNonNull(dir.listFiles())).filter(file1 -> file1.getName().contains(name)).findFirst().get();
-                if (file.exists()){
+                if (file.exists()) {
                     var checkIfDeleted = file.delete();
                     if (checkIfDeleted) {
                         listener.getChannel().sendMessage("Map has been deleted!");
                         reloadMaps();
-                    } else{
+                    } else {
                         listener.getChannel().sendMessage("Couldnt delete map!");
                     }
                 }
@@ -432,12 +387,12 @@ public class Bot {
                 var list = new StringBuilder();
                 list.append("```MAPS:\n\n");
                 for (File file : dir.listFiles())
-                    list.append(file.getName() + System.lineSeparator());
+                    list.append(file.getName()).append(System.lineSeparator());
                 listener.getChannel().sendMessage(list + "```");
             }
             case "exec" -> {
                 if (!isAdmin(listener)) return;
-                ServerControl.instance.handleCommandString(readValueFromArraySeparated(listener.getMessageContent().split(" "), 1 , listener.getMessageContent().split(" ").length));
+                ServerControl.instance.handleCommandString(readValueFromArraySeparated(listener.getMessageContent().split(" "), 1, listener.getMessageContent().split(" ").length));
                 CommandHandler.CommandResponse result = ServerControl.instance.handler.handleMessage(listener.getMessageContent().split(" ")[1]);
                 listener.getChannel().sendMessage("```" + result.runCommand + "```");
             }
@@ -454,8 +409,8 @@ public class Bot {
                 File file = new File(Vars.dataDirectory.absolutePath() + "/logs/");
                 File chosenFile = null;
                 long lastMod = Long.MIN_VALUE;
-                for (File file1 : Objects.requireNonNull(file.listFiles())){
-                    if (file1.lastModified() > lastMod){
+                for (File file1 : Objects.requireNonNull(file.listFiles())) {
+                    if (file1.lastModified() > lastMod) {
                         chosenFile = file1;
                         lastMod = file1.lastModified();
                     }
@@ -470,19 +425,18 @@ public class Bot {
                 List<String> list = reader.lines().toList();
                 long count = list.size();
                 List<String> newList = list.stream().skip(count - amount).toList();
-                try { createAndSendTempFile(listener, newList); } catch (IOException e) { throw new RuntimeException(e); };
+                try {
+                    createAndSendTempFile(listener, newList);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                ;
 
             }
             case "proc" -> {
                 if (!isAdmin(listener)) return;
                 ProcessHandle handle = ProcessHandle.current();
-                String info = "```PROCESS INFO:" + System.lineSeparator() + System.lineSeparator() +
-                        "PID: " + handle.pid() + System.lineSeparator() +
-                        "COMMAND: " + handle.info().command().get() + System.lineSeparator() +
-                        "COMMAND LINE: " + handle.info().commandLine().get() + System.lineSeparator() +
-                        "STARTINSTANT: " + handle.info().startInstant().get() + System.lineSeparator() +
-                        "OWNER: " + handle.info().user().get() + System.lineSeparator() +
-                        "```";
+                String info = "```PROCESS INFO:" + System.lineSeparator() + System.lineSeparator() + "PID: " + handle.pid() + System.lineSeparator() + "COMMAND: " + handle.info().command().get() + System.lineSeparator() + "COMMAND LINE: " + handle.info().commandLine().get() + System.lineSeparator() + "STARTINSTANT: " + handle.info().startInstant().get() + System.lineSeparator() + "OWNER: " + handle.info().user().get() + System.lineSeparator() + "```";
                 listener.getChannel().sendMessage(info);
             }
             case "backupdb" -> {
@@ -495,7 +449,7 @@ public class Bot {
                         for (File file : data2.listFiles()) {
                             listener.getChannel().sendMessage(file);
                         }
-                    },2);
+                    }, 2);
 
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -503,25 +457,13 @@ public class Bot {
             }
             case "conhelp" -> {
                 if (!isAdmin(listener)) return;
-                String help = "```CONSOLE COMMANDS:\n\n" +
-                        "Note: do not use some of commands at public chats!\n\n" +
-                        prefix + "exit - exits the server" +
-                        prefix + "backupdb - Dumps database and sends it to discord\n" +
-                        prefix + "proc - Views status of server processs\n" +
-                        prefix + "addmap <Attachments> - Adds maps to the server\n" +
-                        prefix + "removemap <mapname> - Removes map from the server\n" +
-                        prefix + "viewlatestlogs <lines> - Views latest logs\n" +
-                        prefix + "listmap - Lists all map files\n" +
-                        prefix + "exec <command> - Executes console command\n" +
-                        prefix + "giveach <plr> <ach> - give special achievement\n" +
-                        prefix + "removeach <plr> <ach> - removes special achievement\n" +
-                        prefix + "setrank <playerIdOrName> <rankid> -> set rank to player```\n";
+                String help = "```CONSOLE COMMANDS:\n\n" + "Note: do not use some of commands at public chats!\n\n" + prefix + "exit - exits the server" + prefix + "backupdb - Dumps database and sends it to discord\n" + prefix + "proc - Views status of server processs\n" + prefix + "addmap <Attachments> - Adds maps to the server\n" + prefix + "removemap <mapname> - Removes map from the server\n" + prefix + "viewlatestlogs <lines> - Views latest logs\n" + prefix + "listmap - Lists all map files\n" + prefix + "exec <command> - Executes console command\n" + prefix + "giveach <plr> <ach> - give special achievement\n" + prefix + "removeach <plr> <ach> - removes special achievement\n" + prefix + "setrank <playerIdOrName> <rankid> -> set rank to player```\n";
                 listener.getChannel().sendMessage(help);
-            }
             }
         }
     }
-    // registers slash commands so user can see them and use
+}
+// registers slash commands so user can see them and use
     /*private static void registerSlashCommands() {
         SlashCommand banCommand = SlashCommand.with("ban", "Bans the player",
                         Arrays.asList(
@@ -572,7 +514,7 @@ public class Bot {
                         SlashCommandOption.create(
                                 SlashCommandOptionType.STRING,
                                 "idOrName",
-                                "Player id or name",
+                                "PlayerData id or name",
                                 true
                         ))
         ).createGlobal(api).join();
@@ -581,7 +523,7 @@ public class Bot {
                         SlashCommandOption.create(
                                 SlashCommandOptionType.STRING,
                                 "name",
-                                "Player name",
+                                "PlayerData name",
                                 true
                         ))
         ).createGlobal(api).join();
@@ -637,9 +579,9 @@ public class Bot {
                             .respond();
                     return;
                 }
-                Player plr = Groups.player.find(p -> p.uuid().equals(user.getString("uuid")));
+                PlayerData plr = Groups.player.find(p -> p.uuid().equals(user.getString("uuid")));
                 if (plr == null) {
-                    Log.info("Player is offline, not kicking him");
+                    Log.info("PlayerData is offline, not kicking him");
                 } else {
                     plr.con.kick("[red]You have been banned!\n\n" + "[white]Reason: " + reason + "\nDuration: " + timeUntilUnban + " until unban\nIf you think this is a mistake, make sure to appeal ban in our discord: " + discordurl, 0);
                 }
@@ -656,12 +598,12 @@ public class Bot {
                     return;
                 }
                 String name = listener.getSlashCommandInteraction().getOptionByName("name").get().getStringValue().get();
-                Player player = findPlayerByName(name);
+                PlayerData player = findPlayerByName(name);
                 if (player == null){
                     listener.getSlashCommandInteraction().createImmediateResponder().setContent("No such player!").respond(); return;
                 }
                 if (player.admin()){
-                    listener.getSlashCommandInteraction().createImmediateResponder().setContent("Player is already admin!").respond(); return;
+                    listener.getSlashCommandInteraction().createImmediateResponder().setContent("PlayerData is already admin!").respond(); return;
                 }
                 netServer.admins.adminPlayer(String.valueOf(player.uuid()), player.usid());
                 listener.getSlashCommandInteraction().createImmediateResponder().setContent("Successfully admin " + player.plainName()).respond();
@@ -680,7 +622,7 @@ public class Bot {
                     listener.getSlashCommandInteraction().createImmediateResponder().setContent("This player doesnt exists!").respond();
                     return;
                 }
-                Player player = Groups.player.find(p -> p.uuid().equals(user.getString("uuid")));
+                PlayerData player = Groups.player.find(p -> p.uuid().equals(user.getString("uuid")));
                 if (player == null){
                     listener.getSlashCommandInteraction().createImmediateResponder().setContent("This player is offline!").respond();
                     return;

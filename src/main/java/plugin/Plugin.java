@@ -4,7 +4,6 @@ import arc.ApplicationListener;
 import arc.Events;
 import arc.util.CommandHandler;
 import arc.util.Log;
-import arc.util.Strings;
 import com.mongodb.ConnectionString;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -24,6 +23,7 @@ import org.json.simple.parser.ParseException;
 import plugin.discord.Bot;
 import plugin.etc.AntiVpn;
 import plugin.models.PlayerData;
+import plugin.models.PlayerDataCollection;
 import useful.Bundle;
 
 import java.io.File;
@@ -41,16 +41,15 @@ import static plugin.commands.MainCommands.*;
 import static plugin.commands.history.History.historyPlayers;
 import static plugin.commands.history.History.loadHistory;
 import static plugin.etc.AntiVpn.loadAntiVPN;
-import static plugin.functions.MongoDB.*;
+import static plugin.functions.Other.PlaytimeTimer;
 import static plugin.functions.Other.kickIfBanned;
 import static plugin.functions.Other.welcomeMenu;
-import static plugin.utils.FindDocument.getPlayerData;
 
 
-public class Plugin extends mindustry.mod.Plugin implements ApplicationListener{
+public class Plugin extends mindustry.mod.Plugin implements ApplicationListener {
     public static MongoClient mongoClient;
     public static MongoDatabase db;
-    public static MongoCollection<PlayerData> newCollection;
+    public static MongoCollection<PlayerDataCollection> players;
     public static JSONObject servers;
 
     static {
@@ -61,7 +60,6 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener{
         }
     }
 
-    // loads bot and other shit
     public Plugin() throws IOException, ParseException {
         ConfigJson.read();
         Bot.load();
@@ -70,9 +68,9 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener{
         CodecRegistry pojoCodecRegistry = fromRegistries(getDefaultCodecRegistry(), fromProviders(pojoCodecProvider));
         mongoClient = MongoClients.create(string);
         db = mongoClient.getDatabase("mindustry").withCodecRegistry(pojoCodecRegistry);
-        newCollection = db.getCollection("newplayers", PlayerData.class);
+        players = db.getCollection("players", PlayerDataCollection.class);
         File dir = new File(Vars.tmpDirectory.absolutePath());
-        if (!dir.exists()){
+        if (!dir.exists()) {
             dir.mkdir();
         }
     }
@@ -84,73 +82,73 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener{
         loadHistory();
         Log.info("Plugin started!");
         Bundle.load(Plugin.class);
+
         Events.on(EventType.PlayerJoin.class, event -> {
             Player plr = event.player;
-            if(!plr.admin) welcomeMenu(plr);
-            PlayerData data = findPlayerDataOrCreate(event.player);
-            fillData(data, event.player);
+            if (!plr.admin) welcomeMenu(plr);
+            PlayerData data = new PlayerData(event.player);
             kickIfBanned(event.player);
-            String joinMessage = data.joinMessage;
-            if (joinMessage.endsWith(" ")){
-                joinMessage = joinMessage.substring(0, joinMessage.length()-1);
-            }
-            Call.sendMessage(Strings.format(joinMessage + " [grey][" + data.id + "]", plr.name()));
-            Log.info(plr.plainName() + " joined! " + "[" + data.id + "]");
+            String joinMessage = data.getJoinMessage().trim();
+            Call.sendMessage(joinMessage.replace("@", plr.name()) + " [grey][" + data.getId() + "]");
+            Log.info(plr.plainName() + " joined! " + "[" + data.getId() + "]");
         });
-        MongoDbPlaytimeTimer();
+
+        PlaytimeTimer();
+
         net.handleServer(Packets.Connect.class, (con, connect) -> {
             Events.fire(new EventType.ConnectionEvent(con));
-            MongoDbPlayerIpCheck(con);
 
-            if (netServer.admins.isIPBanned(connect.addressTCP) || netServer.admins.isSubnetBanned(connect.addressTCP)){
+            if (netServer.admins.isIPBanned(connect.addressTCP) || netServer.admins.isSubnetBanned(connect.addressTCP)) {
                 con.kick(Packets.KickReason.banned);
             }
             kickIfBanned(con);
             if (AntiVpn.checkAddress(connect.addressTCP))
                 con.kick("[orange]You are suspected in using VPN or being a bot! Please, if its not true, report that incident on our discord: " + discordUrl);
         });
-        Events.on(EventType.PlayerChatEvent.class, event ->{
-            if (isVoting){
-                int votesRequired = (int) Math.ceil((double) Groups.player.size()/2);
-                switch (event.message){
-                    case "y" ->{
-                        if (votedPlayer.contains(event.player)){
+
+        Events.on(EventType.PlayerChatEvent.class, event -> {
+            if (isVoting) {
+                int votesRequired = (int) Math.ceil((double) Groups.player.size() / 2);
+                switch (event.message) {
+                    case "y" -> {
+                        if (votedPlayer.contains(event.player)) {
                             event.player.sendMessage("You already voted!");
                             return;
                         }
                         votes.getAndAdd(1);
                         votedPlayer.add(event.player);
-                        Call.sendMessage(event.player.plainName() +" Voted: " + votes.get() +"/"+ votesRequired);
+                        Call.sendMessage(event.player.plainName() + " Voted: " + votes.get() + "/" + votesRequired);
                     }
-                    case "n" ->{
-                        if (votedPlayer.contains(event.player)){
+                    case "n" -> {
+                        if (votedPlayer.contains(event.player)) {
                             event.player.sendMessage("You already voted!");
                             return;
                         }
                         votes.getAndAdd(-1);
                         votedPlayer.add(event.player);
-                        Call.sendMessage(event.player.plainName() +" Voted: " + votes.get() +"/"+ votesRequired);
+                        Call.sendMessage(event.player.plainName() + " Voted: " + votes.get() + "/" + votesRequired);
                     }
                 }
             }
         });
+
         Events.on(EventType.PlayerLeave.class, event -> {
             Player player = event.player;
             historyPlayers.remove(player.uuid());
-            PlayerData data = getPlayerData(player.uuid());
-            if (data == null) return;
-            Call.sendMessage(player.name() + "[white] left " + "[grey][" + data.id + "]");
-            Log.info(player.plainName() + " left " + "[" + data.id + "]");
+            PlayerData data = new PlayerData(player);
+            Call.sendMessage(player.name() + "[white] left " + "[grey][" + data.getId() + "]");
+            Log.info(player.plainName() + " left " + "[" + data.getId() + "]");
         });
     }
 
 
     @Override
-    public void registerClientCommands(CommandHandler handler){
+    public void registerClientCommands(CommandHandler handler) {
         loadClientCommands(handler);
     }
+
     @Override
-    public void registerServerCommands(CommandHandler handler){
+    public void registerServerCommands(CommandHandler handler) {
         loadServerCommands(handler);
     }
 }
