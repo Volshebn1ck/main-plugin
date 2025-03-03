@@ -14,6 +14,7 @@ public class PlayerDataCollection {
     public ArrayList<String> achievements = new ArrayList<>();
     public int playtime = 0;
     public boolean isVip = false;
+    public PlayerDataCollection(){} //necessary for mongodb
     public PlayerDataCollection(int id, String uuid){
         this.uuid = uuid;
         this.id = id;
