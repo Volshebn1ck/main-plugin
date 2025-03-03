@@ -70,7 +70,7 @@ public class Bot {
             if (event.message.startsWith("/")) {
                 return;
             }
-            channel.sendMessage("`" + event.player.plainName() + ": " + event.message + "`");
+            channel.sendMessage(event.player.plainName() + ": `" + event.message + "`");
         });
 
         Events.on(EventType.PlayerJoin.class, event -> Timer.schedule(() -> {
@@ -97,7 +97,7 @@ public class Bot {
             return;
         }*/
         if (listener.getChannel() == channel && listener.getMessageAuthor().isRegularUser()) {
-            Call.sendMessage("[blue][" + listener.getMessageAuthor().getDisplayName() + "[blue]]: [white]" + listener.getMessageContent());
+            Call.sendMessage("[blue][" + listener.getMessageAuthor().getName() + "[blue]]: [white]" + listener.getMessageContent());
         }
         if (listener.getMessageAuthor().isBotUser()) {
             return;

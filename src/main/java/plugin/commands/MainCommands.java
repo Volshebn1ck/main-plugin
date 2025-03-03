@@ -116,7 +116,7 @@ public class MainCommands {
                 player.sendMessage("Could not find that map!");
                 return;
             }
-            Call.sendMessage(player.name() + "[white] Started vote for map " + choosedMap.plainName() + " -> " + votes.get() + "/" + votesRequired[0] + ", y/n to vote");
+            Call.sendMessage(player.name() + "[#e7e7e7] Started vote for map " + choosedMap.plainName() + "[#e7e7e7] -> " + votes.get() + "/" + votesRequired[0] + ", y/n to vote");
             isVoting = true;
             timer.schedule((new TimerTask() {
                 @Override
