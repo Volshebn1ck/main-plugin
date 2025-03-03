@@ -28,6 +28,15 @@ public class PlayerData {
         return output;
     }
 
+    public static ArrayList<PlayerData> findByIp(String ip) {
+        ArrayList<PlayerData> output = new ArrayList<>();
+        try (MongoCursor<PlayerDataCollection> cursor = players.find(Filters.in("ips", ip)).limit(25).iterator()) {
+            while (cursor.hasNext())
+                output.add(new PlayerData(cursor.next()));
+        }
+        return output;
+    }
+
     public PlayerData(PlayerDataCollection collection){
         this.collection = collection;
     }
@@ -44,9 +53,9 @@ public class PlayerData {
     public PlayerData(Player player) {
         collection = Optional.ofNullable(players.find(eq("uuid", player.uuid())).first()).orElse(
                 new PlayerDataCollection(getNextID(), player.uuid()));
-        collection.names.add(player.plainName());
+        if (!collection.names.contains(player.plainName())) collection.names.add(player.plainName());
         collection.rawName = player.name();
-        collection.ips.add(player.con.address);
+        if (!collection.ips.contains(player.con.address)) collection.ips.add(player.con.address);
         commit();
     }
 
