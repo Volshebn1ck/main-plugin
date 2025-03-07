@@ -1,5 +1,6 @@
 package plugin.utils;
 import arc.Events;
+import arc.func.Func;
 import arc.struct.Seq;
 import mindustry.Vars;
 import mindustry.game.EventType;
@@ -9,7 +10,7 @@ import mindustry.gen.Groups;
 import mindustry.gen.Player;
 import mindustry.maps.Map;
 import mindustry.server.ServerControl;
-import plugin.models.PlayerDataCollection;
+import java.util.ArrayList;
 
 import static plugin.commands.MainCommands.votedPlayer;
 import static plugin.commands.MainCommands.votes;
@@ -40,6 +41,14 @@ public class Utilities {
             maps.add(map);
         }
         return maps;
+    }
+    public static <T> String stringify(ArrayList<T> arr, Func<T, String> stringer) {
+        if (arr == null || arr.isEmpty()) return "";
+        StringBuilder out = new StringBuilder();
+        for (T elem: arr) {
+            out.append(stringer.get(elem));
+        }
+        return out.toString();
     }
 }
 

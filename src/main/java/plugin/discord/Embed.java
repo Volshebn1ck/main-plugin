@@ -3,8 +3,11 @@ package plugin.discord;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.permission.Role;
 import plugin.models.PlayerData;
+import plugin.utils.Utilities;
+import useful.Bundle;
 
 import java.awt.*;
+import java.time.Duration;
 import java.util.Optional;
 
 public class Embed {
@@ -27,5 +30,15 @@ public class Embed {
                 .setTitle("Not enough permissions!")
                 .setColor(Color.RED)
                 .setDescription("You should have <@&" + role.get().getId() + "> Role to interact with this command/button!");
+    }
+    public static EmbedBuilder infoEmbed(PlayerData data) {
+        return new EmbedBuilder()
+                .setTitle("Player info")
+                .setColor(Color.CYAN)
+                .addField("**ID**", String.valueOf(data.getId()))
+                .addField("**UUID**", data.getUuid())
+                .addField("**Names**", Utilities.stringify(data.getNames(), name -> "\n- " + name))
+                .addField("**IPs**", Utilities.stringify(data.getIPs(), name -> "\n- " + name))
+                .addField("**Playtime**", Bundle.formatDuration(Duration.ofMinutes(data.getPlaytime())));
     }
 }

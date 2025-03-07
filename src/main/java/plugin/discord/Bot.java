@@ -2,9 +2,7 @@ package plugin.discord;
 
 import arc.Core;
 import arc.Events;
-import arc.util.CommandHandler;
-import arc.util.Http;
-import arc.util.Log;
+import arc.util.*;
 import arc.util.Timer;
 import mindustry.Vars;
 import mindustry.game.EventType;
@@ -22,6 +20,7 @@ import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.event.message.MessageCreateEvent;
 import plugin.ConfigJson;
 import plugin.models.PlayerData;
+import plugin.utils.Utilities;
 import useful.Bundle;
 
 import java.awt.*;
@@ -194,6 +193,39 @@ public class Bot {
                 Call.sendMessage(data.getLastName() + " has been banned for: " + reason);
                 data.setLastBanTime(banTime);
                 Bot.banchannel.sendMessage(banEmbed(data, reason, banTime, listener.getMessageAuthor().getName()));
+            }
+            case "infoip" -> {
+                if (!isModerator(listener)) {
+                    return;
+                }
+                if (notInBounds(listener.getMessageContent().split(" "), 1)) {
+                    listener.getChannel().sendMessage("Not enough arguments!");
+                    return;
+                }
+                String ip = listener.getMessageContent().split(" ")[1];
+                var data = PlayerData.findByIp(ip);
+                if (data.isEmpty()) {
+                    listener.getChannel().sendMessage("Can`t find player with this ip!");
+                    return;
+                }
+                listener.getChannel().sendMessage(Utilities.stringify(data, d -> d.getLastName() + " [" + d.getId() + "]" + " [" + d.getUuid() + "]\n"));
+            }
+            case "info" -> {
+                if (!isModerator(listener)) {
+                    return;
+                }
+                if (notInBounds(listener.getMessageContent().split(" "), 1)) {
+                    listener.getChannel().sendMessage("Not enough arguments!");
+                    return;
+                }
+                String id = listener.getMessageContent().split(" ")[1];
+                if (!Strings.canParseInt(id)) {
+                    listener.getChannel().sendMessage("Bad ID!");
+                    return;
+                }
+                PlayerData data = new PlayerData(Integer.parseInt(id));
+                if (data.isExist()) listener.getChannel().sendMessage(Embed.infoEmbed(data));
+                else listener.getChannel().sendMessage("nonexistent id!");
             }
             case "adminadd" -> {
                 if (notInBounds(listener.getMessageContent().split(" "), 1)) {
