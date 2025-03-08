@@ -337,10 +337,8 @@ public class Bot {
                 if (!isAdmin(listener)) {
                     return;
                 }
-                String cmd = readValueFromArraySeparated(listener.getMessageContent().split(" "), 1, listener.getMessageContent().split(" ").length);
-                Core.app.post(() -> {
-                    String output = mods.getScripts().runConsole(cmd);
-                    listener.getChannel().sendMessage(output);
+                Utilities.runJs(readValueFromArraySeparated(listener.getMessageContent().split(" "), 1, listener.getMessageContent().split(" ").length), resp -> {
+                    if (!resp.isEmpty()) listener.getChannel().sendMessage(resp);
                 });
             }
             case "exit" -> {
