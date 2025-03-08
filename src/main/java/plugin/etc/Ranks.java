@@ -3,36 +3,24 @@ package plugin.etc;
 import java.util.Arrays;
 
 public class Ranks {
-    public enum Perms {
-        None(),
-        Admin(),
-        JS()
-    }
-
     public enum Rank {
-        None("none", Perms.None),
-        Player("[white]PlayerData", Perms.None),
-        Verified("[blue]Verified", Perms.None),
-        Moderator("[blue]Moderator", Perms.Admin),
-        JS("[purple]JS", Perms.JS),
-        Administrator("[#00bfff]Administrator", Perms.JS);
+        None("none"),
+        Player("[white]PlayerData"),
+        Verified("[blue]Verified"),
+        Moderator("[blue]Moderator"),
+        JS("[purple]JS"),
+        Administrator("[#00bfff]Administrator");
         private final String name;
-        private final Perms perms;
 
-        Rank(String name, Perms perms) {
+        Rank(String name) {
             this.name = name;
-            this.perms = perms;
         }
 
         public String getName() {
             return name;
         }
-
-        public boolean isAdmin() {
-            return perms.ordinal() >= Perms.Admin.ordinal();
-        }
-        public boolean hasJS() {
-            return perms.ordinal() >= Perms.JS.ordinal();
+        public boolean hasRank(Rank rank){
+            return this.ordinal() >= rank.ordinal();
         }
     }
 

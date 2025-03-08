@@ -14,12 +14,14 @@ import mindustry.game.EventType;
 import mindustry.gen.Call;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
+import mindustry.gen.SendChatMessageCallPacket;
 import mindustry.net.Packets;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
+import plugin.commands.handlers.ChatListener;
 import plugin.discord.Bot;
 import plugin.etc.AntiVpn;
 import plugin.models.PlayerData;
@@ -37,7 +39,7 @@ import static plugin.ConfigJson.discordUrl;
 import static plugin.ServersConfig.makeServersConfig;
 import static plugin.commands.BanMenu.loadBanMenu;
 import static plugin.commands.ConsoleCommands.loadServerCommands;
-import static plugin.commands.MainCommands.*;
+import static plugin.commands.ChatCommands.*;
 import static plugin.commands.history.History.historyPlayers;
 import static plugin.commands.history.History.loadHistory;
 import static plugin.etc.AntiVpn.loadAntiVPN;
@@ -70,9 +72,8 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener 
         db = mongoClient.getDatabase("mindustry").withCodecRegistry(pojoCodecRegistry);
         players = db.getCollection("players", PlayerDataCollection.class);
         File dir = new File(Vars.tmpDirectory.absolutePath());
-        if (!dir.exists()) {
+        if (!dir.exists())
             dir.mkdir();
-        }
     }
 
     //  starts once plugin is started
@@ -104,6 +105,16 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener 
             kickIfBanned(con);
             if (AntiVpn.checkAddress(connect.addressTCP))
                 con.kick("[orange]You are suspected in using VPN or being a bot! Please, if its not true, report that incident on our discord: " + discordUrl);
+        });
+
+        net.handleServer(SendChatMessageCallPacket.class, (con, packet) -> {
+            Log.info(con.player.plainName() + ": " + packet.message);
+            if (packet.message.startsWith("/") && !con.player.isNull()) {
+                ChatListener.handleCommand(con.player, packet.message.substring(1));
+            } else {
+                Events.fire(new EventType.PlayerChatEvent(con.player, packet.message));
+                Call.sendMessage("[#" + con.player.color.toString() + "]" + con.player.plainName() + "[#ffffff]: " + packet.message);
+            }
         });
 
         Events.on(EventType.PlayerChatEvent.class, event -> {

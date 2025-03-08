@@ -15,19 +15,17 @@ import mindustry.gen.Player;
 import mindustry.maps.Map;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import plugin.commands.annotations.ChatCommand;
+import plugin.etc.Ranks;
 import plugin.models.PlayerData;
 import plugin.models.PlayerDataCollection;
 import useful.Bundle;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static arc.util.Strings.canParseInt;
-import static mindustry.Vars.mods;
 import static plugin.ConfigJson.discordUrl;
 import static plugin.Plugin.players;
 import static plugin.Plugin.servers;
@@ -36,49 +34,40 @@ import static plugin.commands.history.History.historyPlayers;
 import static plugin.functions.Other.statsMenu;
 import static plugin.utils.Utilities.*;
 
-public class MainCommands {
+@SuppressWarnings("unused")
+public class ChatCommands {
     public static AtomicInteger votes = new AtomicInteger(0);
     public static Seq<Player> votedPlayer = new Seq<>();
     public static boolean isVoting = false;
 
+    @ChatCommand(name = "announce", args = "<text>", description = "calls an announce", requiredRank = Ranks.Rank.Moderator, minArgsCount = 1, maxArgsCount = 1, isLastArgText = true)
+    public void announce(Player player, List<String> args) {
+        Call.announce(args.get(0));
+    }
+
+    @ChatCommand(name = "gameover", description = "Executes a gameover event", requiredRank = Ranks.Rank.Moderator)
+    public void gameover(Player player, List<String> args) {
+        Events.fire(new EventType.GameOverEvent(Team.derelict));
+    }
+
+    @ChatCommand(name = "players", description = "Lists all players on the server")
+    public void players(Player player, List<String> args){
+        StringBuilder list = new StringBuilder();
+        for (Player plr : Groups.player) {
+            PlayerData data = new PlayerData(plr);
+            if (data.isExist()) {
+                list.append(plr.name()).append("; [white]ID: ").append(data.getId()).append("\n");
+            }
+        }
+        player.sendMessage(String.valueOf(list));
+    }
+
+    @ChatCommand(name = "js", args = "<code>", description = "Execute JS code", requiredRank = Ranks.Rank.JS, minArgsCount = 1, maxArgsCount = 1, isLastArgText = true)
+    public void javascript(Player player, List<String> args){
+        runJs(args.get(0), resp -> {if (!resp.isEmpty()) player.sendMessage(resp);});
+    }
+
     public static void loadClientCommands(CommandHandler handler) {
-        handler.<Player>register("announce", "<text...>", "calls an announce", (args, player) -> {
-            if (!player.admin) {
-                player.sendMessage("[red]You do not have enough permissions!");
-            } else {
-                Call.announce(args[0]);
-            }
-        });
-        handler.<Player>register("gameover", "Executes a gameover event", (args, player) -> {
-            if (!player.admin) {
-                player.sendMessage("[red]You do not have enough permissions!");
-            } else {
-                Events.fire(new EventType.GameOverEvent(Team.derelict));
-            }
-        });
-        handler.<Player>register("list", "Lists all players on the server", (args, player) -> {
-            StringBuilder list = new StringBuilder();
-            for (Player plr : Groups.player) {
-                PlayerData data = new PlayerData("uuid");
-                if (data.isExist()) {
-                    list.append(plr.name()).append("; [white]ID: ").append(data.getId()).append("\n");
-                }
-            }
-            player.sendMessage(String.valueOf(list));
-        });
-        handler.<Player>register("js", "<code...>", "Execute JavaScript code.", (args, player) -> {
-            PlayerData data = new PlayerData("uuid");
-            if (player.admin() && data.getRank().hasJS()) {
-                try {
-                    String output = mods.getScripts().runConsole(args[0]);
-                    player.sendMessage("> " + ("[#ff341c]" + output));
-                } catch (Exception e) {
-                    player.sendMessage("Error! " + e);
-                }
-            } else {
-                player.sendMessage("[scarlet]You must be console to use this command.");
-            }
-        });
         handler.<Player>register("maps", "[page]", "List all maps", (args, player) -> {
             StringBuilder list = new StringBuilder();
             int page;
@@ -136,9 +125,7 @@ public class MainCommands {
                 }
             }), 0, 1000);
         });
-        handler.<Player>register("discord", "Link to our discord!", (args, player) -> {
-            Call.openURI(player.con, discordUrl);
-        });
+        handler.<Player>register("discord", "Link to our discord!", (args, player) -> Call.openURI(player.con, discordUrl));
         handler.<Player>register("stats", "[player...]", "Get stats of player or yourself", (args, player) -> {
             if (args.length == 0) {
                 statsMenu(player, player);
@@ -177,16 +164,14 @@ public class MainCommands {
                 FindIterable<PlayerDataCollection> sort = players.find().sort(new BasicDBObject("playtime", -1)).limit(10);
                 for (PlayerDataCollection data : sort) {
                     int playtime = data.playtime;
-                    list.append(data.rawName + "[white]: " + Bundle.formatDuration(Duration.ofMinutes(playtime)) + "\n");
+                    list.append(data.rawName).append("[white]: ").append(Bundle.formatDuration(Duration.ofMinutes(playtime))).append("\n");
                 }
                 player.sendMessage(list.toString());
             } else {
                 player.sendMessage("[red]Invalid type!");
             }
         });
-        handler.<Player>register("achievements", "Views your achievements", (args, player) -> {
-            achMenu(player);
-        });
+        handler.<Player>register("achievements", "Views your achievements", (args, player) -> achMenu(player));
         handler.<Player>register("serverhop", "<server>", "Hops to server", (args, parameter) -> {
             JSONArray array = (JSONArray) servers.get("servers");
             Seq<Server> servers = new Seq<>();
