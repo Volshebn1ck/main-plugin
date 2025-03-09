@@ -108,12 +108,25 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener 
         });
 
         net.handleServer(SendChatMessageCallPacket.class, (con, packet) -> {
-            Log.info(con.player.plainName() + ": " + packet.message);
-            if (packet.message.startsWith("/") && !con.player.isNull()) {
-                ChatListener.handleCommand(con.player, packet.message.substring(1));
-            } else {
-                Events.fire(new EventType.PlayerChatEvent(con.player, packet.message));
-                Call.sendMessage("[#" + con.player.color.toString() + "]" + con.player.plainName() + "[#ffffff]: " + packet.message);
+            Player player = con.player;
+            if (player == null) return;
+            if (packet.message == null) return;
+            if (player.con.hasConnected && player.isAdded()) {
+                String message = packet.message;
+                if (message == null) return;
+                if (message.length() > Vars.maxTextLength) {
+                    player.sendMessage("Message too long");
+                    return;
+                }
+                Events.fire(new EventType.PlayerChatEvent(player, message));
+                Log.info("[@]: @", player.plainName(), message);
+                if (message.startsWith("/")) {
+                    ChatListener.handleCommand(con.player, packet.message.substring(1));
+                } else {
+                    message = Vars.netServer.admins.filterMessage(player, message.replace("\n", ""));
+                    String finalMessage = message; // "Variable used in lambda expression should be final or effectively final"
+                    Groups.player.each(pl -> pl.sendMessage("[coral][\f" + player.coloredName() + "\f[coral]][white]: " + finalMessage, player, finalMessage));
+                }
             }
         });
 
