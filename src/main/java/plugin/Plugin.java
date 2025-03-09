@@ -124,8 +124,8 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener 
                     ChatListener.handleCommand(con.player, packet.message.substring(1));
                 } else {
                     message = Vars.netServer.admins.filterMessage(player, message.replace("\n", ""));
-                    String finalMessage = message; // "Variable used in lambda expression should be final or effectively final"
-                    Groups.player.each(pl -> pl.sendMessage("[coral][\f" + player.coloredName() + "\f[coral]][white]: " + finalMessage, player, finalMessage));
+                    if (message == null) return;
+                    Call.sendMessage("[coral][\f" + player.coloredName() + "\f[coral]][white]: " + message, message, player);
                 }
             }
         });
