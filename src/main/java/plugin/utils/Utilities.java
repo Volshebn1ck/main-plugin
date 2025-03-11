@@ -12,25 +12,20 @@ import mindustry.gen.Call;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
 import mindustry.maps.Map;
-import mindustry.server.ServerControl;
 import rhino.Context;
 import rhino.NativeJavaObject;
 import rhino.Scriptable;
 import rhino.Undefined;
-
 import java.util.ArrayList;
 
-import static plugin.commands.MainCommands.votedPlayer;
-import static plugin.commands.MainCommands.votes;
+import static plugin.commands.ChatCommands.votedPlayer;
+import static plugin.commands.ChatCommands.votes;
 
 public class Utilities {
     private static final Scriptable scope = Reflect.get(Vars.mods.getScripts(), "scope");
     // finds player using their name (without colors)
     public static Player findPlayerByName(String name){
         return Groups.player.find(t-> t.plainName().contains(name));
-    }
-    public static <T> T notNullElse(T value, T value2){
-        return value != null ? value : value2;
     }
     public static void voteCanceled(){
         Call.sendMessage("[red]Vote has been canceled!");

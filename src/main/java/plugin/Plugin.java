@@ -14,12 +14,14 @@ import mindustry.game.EventType;
 import mindustry.gen.Call;
 import mindustry.gen.Groups;
 import mindustry.gen.Player;
+import mindustry.gen.SendChatMessageCallPacket;
 import mindustry.net.Packets;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
+import plugin.commands.handlers.ChatListener;
 import plugin.discord.Bot;
 import plugin.etc.AntiVpn;
 import plugin.models.PlayerData;
@@ -37,7 +39,7 @@ import static plugin.ConfigJson.discordUrl;
 import static plugin.ServersConfig.makeServersConfig;
 import static plugin.commands.BanMenu.loadBanMenu;
 import static plugin.commands.ConsoleCommands.loadServerCommands;
-import static plugin.commands.MainCommands.*;
+import static plugin.commands.ChatCommands.*;
 import static plugin.commands.history.History.historyPlayers;
 import static plugin.commands.history.History.loadHistory;
 import static plugin.etc.AntiVpn.loadAntiVPN;
@@ -70,9 +72,8 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener 
         db = mongoClient.getDatabase("mindustry").withCodecRegistry(pojoCodecRegistry);
         players = db.getCollection("players", PlayerDataCollection.class);
         File dir = new File(Vars.tmpDirectory.absolutePath());
-        if (!dir.exists()) {
+        if (!dir.exists())
             dir.mkdir();
-        }
     }
 
     //  starts once plugin is started
@@ -104,6 +105,28 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener 
             kickIfBanned(con);
             if (AntiVpn.checkAddress(connect.addressTCP))
                 con.kick("[orange]You are suspected in using VPN or being a bot! Please, if its not true, report that incident on our discord: " + discordUrl);
+        });
+
+        net.handleServer(SendChatMessageCallPacket.class, (con, packet) -> {
+            Player player = con.player;
+            if (player == null) return;
+            if (packet.message == null) return;
+            if (player.con.hasConnected && player.isAdded()) {
+                String message = packet.message;
+                if (message.length() > Vars.maxTextLength) {
+                    player.sendMessage("Message too long");
+                    return;
+                }
+                Events.fire(new EventType.PlayerChatEvent(player, message));
+                Log.info("[@]: @", player.plainName(), message);
+                if (message.startsWith("/")) {
+                    ChatListener.handleCommand(player, message.substring(1));
+                } else {
+                    message = Vars.netServer.admins.filterMessage(player, message.replace("\n", ""));
+                    if (message == null) return;
+                    Call.sendMessage("[coral][\f" + player.coloredName() + "\f[coral]][white]: " + message, message, player);
+                }
+            }
         });
 
         Events.on(EventType.PlayerChatEvent.class, event -> {
@@ -139,12 +162,6 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener 
             Call.sendMessage(player.name() + "[white] left " + "[grey][" + data.getId() + "]");
             Log.info(player.plainName() + " left " + "[" + data.getId() + "]");
         });
-    }
-
-
-    @Override
-    public void registerClientCommands(CommandHandler handler) {
-        loadClientCommands(handler);
     }
 
     @Override
