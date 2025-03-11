@@ -113,7 +113,6 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener 
             if (packet.message == null) return;
             if (player.con.hasConnected && player.isAdded()) {
                 String message = packet.message;
-                if (message == null) return;
                 if (message.length() > Vars.maxTextLength) {
                     player.sendMessage("Message too long");
                     return;
@@ -121,7 +120,7 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener 
                 Events.fire(new EventType.PlayerChatEvent(player, message));
                 Log.info("[@]: @", player.plainName(), message);
                 if (message.startsWith("/")) {
-                    ChatListener.handleCommand(con.player, packet.message.substring(1));
+                    ChatListener.handleCommand(player, message.substring(1));
                 } else {
                     message = Vars.netServer.admins.filterMessage(player, message.replace("\n", ""));
                     if (message == null) return;
@@ -163,12 +162,6 @@ public class Plugin extends mindustry.mod.Plugin implements ApplicationListener 
             Call.sendMessage(player.name() + "[white] left " + "[grey][" + data.getId() + "]");
             Log.info(player.plainName() + " left " + "[" + data.getId() + "]");
         });
-    }
-
-
-    @Override
-    public void registerClientCommands(CommandHandler handler) {
-        loadClientCommands(handler);
     }
 
     @Override

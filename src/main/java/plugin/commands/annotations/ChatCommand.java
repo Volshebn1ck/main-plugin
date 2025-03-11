@@ -2,7 +2,6 @@ package plugin.commands.annotations;
 
 import plugin.etc.Ranks;
 
-import javax.lang.model.type.NullType;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

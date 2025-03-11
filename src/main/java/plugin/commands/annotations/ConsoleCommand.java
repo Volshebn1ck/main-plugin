@@ -9,4 +9,15 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.METHOD)
 public @interface ConsoleCommand {
+    String name();
+
+    String args() default "";
+
+    String description();
+
+    int minArgsCount() default 0;
+
+    int maxArgsCount() default 0;
+
+    boolean isLastArgText() default false;
 }

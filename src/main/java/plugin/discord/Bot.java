@@ -129,7 +129,7 @@ public class Bot {
                 }
                 String id = readValueFromArraySeparated(listener.getMessageContent().split(" "), 1, listener.getMessageContent().split(" ").length);
                 PlayerData data = new PlayerData(Integer.parseInt(id));
-                if (data.isNotExist()) {
+                if (!data.isExist()) {
                     listener.getChannel().sendMessage("Could not find that player!");
                 } else {
                     long playtime = data.getPlaytime();
@@ -178,7 +178,7 @@ public class Bot {
                 PlayerData data;
                 if (canParseInt(id)) data = new PlayerData(Integer.parseInt(id));
                 else data = new PlayerData(id);
-                if (data.isNotExist()) {
+                if (!data.isExist()) {
                     response = "Could not find that player.";
                     listener.getChannel().sendMessage(response);
                     return;
@@ -227,7 +227,7 @@ public class Bot {
                 }
                 PlayerData data = new PlayerData(Integer.parseInt(listener.getMessageContent().split(" ")[1]));
                 String rank = listener.getMessageContent().split(" ")[2];
-                if (data.isNotExist()) {
+                if (!data.isExist()) {
                     listener.getChannel().sendMessage("No such player!");
                 } else if (getRank(rank) == Rank.None) {
                     listener.getChannel().sendMessage("This rank doesnt exist!");
@@ -250,7 +250,7 @@ public class Bot {
                 }
                 String id = readValueFromArraySeparated(listener.getMessageContent().split(" "), 1, listener.getMessageContent().split(" ").length);
                 PlayerData data = new PlayerData(Integer.parseInt(id));
-                if (data.isNotExist()) {
+                if (!data.isExist()) {
                     listener.getChannel().sendMessage("This player doesnt exist!");
                 } else {
                     Player player = Groups.player.find(p -> p.uuid().equals(data.getUuid()));
@@ -288,7 +288,7 @@ public class Bot {
                 }
                 String id = readValueFromArraySeparated(listener.getMessageContent().split(" "), 1, listener.getMessageContent().split(" ").length);
                 PlayerData data = new PlayerData(Integer.parseInt(id));
-                if (data.isNotExist()) {
+                if (!data.isExist()) {
                     listener.getChannel().sendMessage("Could not find that player!");
                 } else if (data.getLastBanTime() == 0L) {
                     listener.getChannel().sendMessage("User is not banned!");
@@ -347,7 +347,7 @@ public class Bot {
                 }
                 String id = listener.getMessageContent().split(" ")[1];
                 PlayerData data = new PlayerData(Integer.parseInt(id));
-                if (data.isNotExist()) {
+                if (!data.isExist()) {
                     noDataFound(listener);
                 } else {
                     String achName = readValueFromArraySeparated(listener.getMessageContent().split(" "), 2, listener.getMessageContent().split(" ").length);

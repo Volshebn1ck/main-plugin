@@ -25,7 +25,7 @@ public class ConsoleCommands {
         handler.register("setrank", "<id> <rank>", "Sets rank to player", (args, params) -> {
             PlayerData data = new PlayerData(Integer.parseInt(args[0]));
             String rank = args[1];
-            if (data.isNotExist()) {
+            if (!data.isExist()) {
                 Log.warn("No such player!");
             } else if (Ranks.getRank(rank) == Ranks.Rank.None) {
                 Log.warn("This rank doesnt exist!");
@@ -37,7 +37,7 @@ public class ConsoleCommands {
         handler.register("setvip", "<id> <true/false>", "Sets vip to player", (args, params) -> {
             PlayerData data = new PlayerData(Integer.parseInt(args[0]));
             String isVipString = args[1];
-            if (data.isNotExist()) {
+            if (!data.isExist()) {
                 Log.warn("No such player!");
             } else if (!(isVipString.equals("true") || isVipString.equals("false"))) {
                 Log.warn("true or false");

@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 import static com.mongodb.client.model.Filters.eq;
 import static plugin.Plugin.players;
 
-public class PlayerData {
+public final class PlayerData {
     private final PlayerDataCollection collection;
 
     public static ArrayList<PlayerData> findByName(String name) {
@@ -53,11 +53,6 @@ public class PlayerData {
     public boolean isExist() {
         return collection != null;
     }
-
-    public boolean isNotExist() {
-        return collection == null;
-    }
-
 
     public void commit() {
         players.replaceOne(eq("_id", collection.id), collection, new ReplaceOptions().upsert(true));
@@ -115,53 +110,33 @@ public class PlayerData {
         return collection.id;
     }
 
-    ;
-
     public String getUuid() {
         return collection.uuid;
     }
-
-    ;
 
     public ArrayList<String> getNames() {
         return collection.names;
     }
 
-    ;
-
     public String getLastName() {
         return collection.names.get(collection.names.size() - 1);
     }
-
-    public String getRawName() {
-        return collection.rawName;
-    }
-
-    ;
 
     public Ranks.Rank getRank() {
         return Ranks.getRank(collection.rank);
     }
 
-    ;
-
     public String getJoinMessage() {
         return collection.joinMessage;
     }
-
-    ;
 
     public ArrayList<String> getIPs() {
         return collection.ips;
     }
 
-    ;
-
     public long getLastBanTime() {
         return collection.lastBan;
     }
-
-    ;
 
     public long getDiscordId() {
         return collection.discordId;
@@ -171,15 +146,7 @@ public class PlayerData {
         return collection.achievements;
     }
 
-    ;
-
     public int getPlaytime() {
         return collection.playtime;
-    }
-
-    ;
-
-    public boolean isVip() {
-        return collection.isVip;
     }
 }

@@ -22,10 +22,10 @@ public class ChatListener {
 
             if (m.isAnnotationPresent(ChatCommand.class)) {
 
-                ChatCommand cmd = m.getAnnotation(ChatCommand.class);
+                ChatCommand command = m.getAnnotation(ChatCommand.class);
 
 
-                COMMANDS.put(cmd.name(), m);
+                COMMANDS.put(command.name(), m);
 
             }
         }
@@ -33,29 +33,29 @@ public class ChatListener {
 
     public static void handleCommand(Player player, String message) {
         List<String> args = new ArrayList<>(List.of(message.split(" ")));
-        String command = args.get(0);
+        String commandName = args.get(0);
         args = args.subList(1, args.size());
-        Log.info("raw args: " + args);
-        Method m = COMMANDS.get(command);
-        if (m == null) {
+        Method method = COMMANDS.get(commandName);
+        if (method == null) {
             player.sendMessage("Command is not exist");
             return;
         }
-        Log.info("Command \"" + command + "\" called");
+        Log.info("Command \"" + commandName + "\" called");
 
-        ChatCommand com = m.getAnnotation(ChatCommand.class);
+        ChatCommand command = method.getAnnotation(ChatCommand.class);
+        int maxArgsCount = Math.max(command.minArgsCount(), command.maxArgsCount());
         List<String> resArgs;
-        if (!new PlayerData(player).getRank().hasRank(com.requiredRank())) {
+        if (!new PlayerData(player).getRank().hasRank(command.requiredRank())) {
             player.sendMessage("Access denied");
             return;
-        } else if (args.size() < com.minArgsCount()) {
+        } else if (args.size() < command.minArgsCount()) {
             player.sendMessage("Not enough arguments");
             return;
-        } else if (args.size() > com.maxArgsCount() && com.isLastArgText()) {
-            resArgs = args.subList(0, com.maxArgsCount() - 1);
-            resArgs.add(String.join(" ", args.subList(com.maxArgsCount() - 1, args.size())));
+        } else if (args.size() > maxArgsCount && command.isLastArgText()) {
+            resArgs = args.subList(0, maxArgsCount - 1);
+            resArgs.add(String.join(" ", args.subList(maxArgsCount - 1, args.size())));
             Log.info("Last arg is text");
-        } else if (args.size() > com.maxArgsCount()) {
+        } else if (args.size() > maxArgsCount) {
             player.sendMessage("Too many arguments");
             return;
         } else resArgs = args;
@@ -63,7 +63,7 @@ public class ChatListener {
 
 
         try {
-            m.invoke(LISTENER, player, resArgs);
+            method.invoke(LISTENER, player, resArgs);
         } catch (IllegalAccessException | InvocationTargetException exception) {
             player.sendMessage("Something went wrong");
             Log.info("\n");
