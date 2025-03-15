@@ -112,7 +112,7 @@ public class BanMenu {
             input.result((view, text) -> {
                 var target = view.state.get(TARGET);
                 long duration = view.state.get(DURATION);
-                PlayerData data = new PlayerData(target.uuid());
+                PlayerData Data = new PlayerData(target.uuid());
                 Date date = new Date();
                 long banTime = date.getTime() + TimeUnit.DAYS.toMillis(duration);
                 String timeUntilUnban = Bundle.formatDuration(Duration.ofDays(duration));
